@@ -86,7 +86,13 @@ const RunListPage: React.FC = () => {
 
       try {
         const data = await client.listTrainingRuns({ limit: 200 });
-        setRuns(data.items);
+        const items = Array.isArray((data as any)?.items)
+          ? (data as any).items
+          : Array.isArray(data)
+            ? data
+            : [];
+
+        setRuns(items);
       } catch (err: any) {
         setError(err?.message ?? 'Failed to load runs');
       } finally {
