@@ -136,6 +136,7 @@ const RunListPage: React.FC = () => {
               <TableRow>
                 <TableCell>Name</TableCell>
                 <TableCell>Status</TableCell>
+                <TableCell>NAM File</TableCell>
                 <TableCell>Created</TableCell>
                 <TableCell>Completed</TableCell>
                 <TableCell>Duration</TableCell>
@@ -160,6 +161,7 @@ const RunListPage: React.FC = () => {
                       color={statusColor(run.status)}
                     />
                   </TableCell>
+                  <TableCell>{run.namStatus || ''}</TableCell>
                   <TableCell>{formatDateTime(run.createdAt)}</TableCell>
                   <TableCell>{formatDateTime(run.completedAt)}</TableCell>
                   <TableCell>
