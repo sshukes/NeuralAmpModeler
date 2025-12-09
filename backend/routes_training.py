@@ -7,7 +7,7 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
 from .models import TrainingRunCreateRequest
-from .store import file_meta, runs
+from .store import file_meta, persist_run, runs
 from .utils import to_iso
 from .training_worker import start_training_for_run
 
@@ -50,6 +50,7 @@ async def create_training_run(payload: TrainingRunCreateRequest):
         "metrics": None,
         "modelPath": None,
     }
+    persist_run(runs[run_id])
 
     start_training_for_run(run_id, payload, in_path, out_path)
 
