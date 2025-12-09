@@ -1,9 +1,9 @@
 # backend/training_worker.py
-from pathlib import Path
 import threading
 import shutil
 import os
 import time
+from pathlib import Path
 from typing import Optional
 
 import matplotlib
@@ -14,7 +14,7 @@ from nam.train import core as nam_core
 from nam import data as nam_data
 from nam.train.colab import run as nam_run
 
-from .store import RUNS_DIR, file_meta, persist_run, runs
+from .store import RUNS_DIR, file_meta, latest_exported_model_path, persist_run, runs
 from .audio_io import repair_audio_in_place
 from .models import TrainingRunCreateRequest
 
@@ -122,13 +122,9 @@ def _run_training_worker(run_id: str, payload: TrainingRunCreateRequest, in_path
         finally:
             os.chdir(cwd_before)
 
-        model_path = None
-        exported_dir = run_dir / "exported_models"
-        if exported_dir.exists():
-            candidates = sorted(exported_dir.glob("*.nam"))
-            if candidates:
-                model_path = candidates[0]
-                print(f"[TRAIN {run_id}] Exported model: {model_path}")
+        model_path = latest_exported_model_path(run_dir)
+        if model_path:
+            print(f"[TRAIN {run_id}] Exported model: {model_path}")
 
         run_entry["status"] = "COMPLETED"
         run_entry["completedAt"] = time.time()

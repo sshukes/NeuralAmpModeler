@@ -1,6 +1,6 @@
 // src/pages/RunDetailsPage.tsx
 import React, { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   Box,
   Card,
@@ -92,6 +92,7 @@ const formatDateTime = (value?: string) => {
 
 const RunDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
 
   const [run, setRun] = useState<RunDetails | null>(null);
   const [metrics, setMetrics] = useState<RunMetricsPoint[]>([]);
@@ -233,6 +234,9 @@ const RunDetailsPage: React.FC = () => {
         </Box>
 
         <Stack direction="row" spacing={1}>
+          <Button variant="outlined" onClick={() => navigate('/runs')}>
+            Back to runs
+          </Button>
           {run.status === 'RUNNING' && (
             <Button
               variant="outlined"
