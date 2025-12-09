@@ -1,0 +1,56 @@
+{
+  "runId": "run_ba9a7bbaadef40a78a11fe716fb6827c",
+  "name": "AC30 Edge Capture",
+  "description": "Captured at 48 kHz with a light drive setting for NAM demo.",
+  "status": "COMPLETED",
+  "createdAt": 1765296985.212,
+  "startedAt": 1765296985.212,
+  "updatedAt": 1765297585.212,
+  "completedAt": 1765297585.212,
+  "training": {
+    "architecture": "standard",
+    "epochs": 8,
+    "batchSize": 24,
+    "learningRate": 0.0015,
+    "device": "gpu",
+    "ignoreChecks": false
+  },
+  "metadata": {
+    "gearMake": "Vox",
+    "gearModel": "AC30",
+    "gearType": "Amp",
+    "toneType": "Edge of breakup",
+    "modeledBy": "House preset"
+  },
+  "progress": {
+    "currentEpoch": 8,
+    "maxEpochs": 8,
+    "trainLoss": 0.0078,
+    "valLoss": 0.0094,
+    "bestValLoss": 0.0087,
+    "bestEpoch": 7
+  },
+  "metrics": {
+    "snrDb": 68.4,
+    "rmsError": 0.0012,
+    "spectralErrorDb": -61.3,
+    "timeAlignmentErrorSamples": 2,
+    "qualityScore": 92.7
+  },
+  "metricsHistory": [
+    {"epoch": 1, "train_loss": 0.041, "val_loss": 0.038, "error_ratio": 0.620, "timestamp": "2025-11-09T12:36:00Z"},
+    {"epoch": 2, "train_loss": 0.033, "val_loss": 0.031, "error_ratio": 0.544, "timestamp": "2025-11-09T12:37:05Z"},
+    {"epoch": 3, "train_loss": 0.026, "val_loss": 0.024, "error_ratio": 0.488, "timestamp": "2025-11-09T12:38:10Z"},
+    {"epoch": 4, "train_loss": 0.019, "val_loss": 0.018, "error_ratio": 0.421, "timestamp": "2025-11-09T12:39:15Z"},
+    {"epoch": 5, "train_loss": 0.014, "val_loss": 0.013, "error_ratio": 0.361, "timestamp": "2025-11-09T12:40:20Z"},
+    {"epoch": 6, "train_loss": 0.011, "val_loss": 0.011, "error_ratio": 0.315, "timestamp": "2025-11-09T12:41:25Z"},
+    {"epoch": 7, "train_loss": 0.009, "val_loss": 0.010, "error_ratio": 0.282, "timestamp": "2025-11-09T12:42:30Z"},
+    {"epoch": 8, "train_loss": 0.008, "val_loss": 0.009, "error_ratio": 0.251, "timestamp": "2025-11-09T12:43:35Z"}
+  ],
+  "logs": [
+    {"timestamp": "2025-11-09T12:35:55Z", "level": "INFO", "message": "Prepared input and output WAVs"},
+    {"timestamp": "2025-11-09T12:36:00Z", "level": "INFO", "message": "Starting training with standard architecture"},
+    {"timestamp": "2025-11-09T12:43:36Z", "level": "INFO", "message": "Exported modelPY.nam"}
+  ],
+  "modelPath": "/workspace/NeuralAmpModeler/backend/data/runs/run_ba9a7bbaadef40a78a11fe716fb6827c/exported_models/version_0/modelPY.nam"
+}

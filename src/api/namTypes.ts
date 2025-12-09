@@ -97,6 +97,20 @@ export interface TrainingRunCreateResponse {
     status: TrainingRunStatus;
 }
 
+export interface RunMetricsPoint {
+    epoch: number;
+    train_loss?: number;
+    val_loss?: number;
+    error_ratio?: number;
+    timestamp?: string;
+}
+
+export interface LogEntry {
+    timestamp: string;
+    level: 'DEBUG' | 'INFO' | 'WARN' | 'ERROR';
+    message: string;
+}
+
 export interface TrainingRunProgress {
     currentEpoch: number;
     maxEpochs: number;
@@ -118,6 +132,11 @@ export interface TrainingRunDetailResponse {
     progress?: TrainingRunProgress;
     training: TrainingConfig;
     metadata?: TrainingMetadata;
+    metrics?: RunMetricsPoint[];
+    metricsSummary?: TrainingRunMetrics['metrics'];
+    logs?: LogEntry[];
+    namUrl?: string;
+    namFilename?: string;
 }
 
 // List runs (/api/training-runs)
@@ -132,6 +151,8 @@ export interface TrainingRunSummary {
     device: TrainingDevice;
     qualityScore?: number;
     namStatus?: string;
+    namUrl?: string;
+    namFilename?: string;
 }
 
 export interface ListTrainingRunsParams {
@@ -161,6 +182,7 @@ export interface TrainingRunMetrics {
         timeAlignmentErrorSamples: number;
         qualityScore: number;
     };
+    metricsHistory?: RunMetricsPoint[];
 }
 
 export interface TrainingRunMetricsResponse {

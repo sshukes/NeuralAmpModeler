@@ -161,7 +161,21 @@ const RunListPage: React.FC = () => {
                       color={statusColor(run.status)}
                     />
                   </TableCell>
-                  <TableCell>{run.namStatus || ''}</TableCell>
+                  <TableCell>
+                    {run.namUrl ? (
+                      <Link
+                        href={run.namUrl}
+                        onClick={(e) => e.stopPropagation()}
+                        target="_blank"
+                        rel="noreferrer"
+                        download={run.namFilename || undefined}
+                      >
+                        {run.namFilename || 'Download'}
+                      </Link>
+                    ) : (
+                      run.namStatus || '–'
+                    )}
+                  </TableCell>
                   <TableCell>{formatDateTime(run.createdAt)}</TableCell>
                   <TableCell>{formatDateTime(run.completedAt)}</TableCell>
                   <TableCell>

@@ -4,7 +4,7 @@ import time
 import uuid
 
 from fastapi import APIRouter
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from .models import TrainingRunCreateRequest
 from .store import RUNS_DIR, file_meta, persist_run, runs
@@ -31,6 +31,29 @@ def has_nam_export(run: dict) -> bool:
 
     exported_dir = RUNS_DIR / run_id / "exported_models"
     return exported_dir.exists() and any(exported_dir.glob("*.nam"))
+
+
+def resolve_model_path(run: dict) -> Path | None:
+    """Find a concrete model path for a run, updating it in-place when possible."""
+    model_path = run.get("modelPath")
+    if model_path:
+        path_obj = Path(model_path)
+        if path_obj.exists():
+            return path_obj
+
+    run_id = run.get("runId")
+    if not run_id:
+        return None
+
+    exported_dir = RUNS_DIR / run_id / "exported_models"
+    candidates = sorted(exported_dir.glob("*.nam"))
+    if not candidates:
+        return None
+
+    chosen = candidates[0]
+    run["modelPath"] = str(chosen)
+    persist_run(run)
+    return chosen
 
 
 @router.post("/training-runs")
@@ -63,6 +86,8 @@ async def create_training_run(payload: TrainingRunCreateRequest):
         "metadata": payload.metadata.model_dump() if payload.metadata else None,
         "progress": None,
         "metrics": None,
+        "metricsHistory": [],
+        "logs": [],
         "modelPath": None,
     }
     persist_run(runs[run_id])
@@ -81,6 +106,16 @@ async def get_training_run(run_id: str):
     if not run:
         return JSONResponse(status_code=404, content={"detail": "Run not found"})
 
+    metrics_history = run.get("metricsHistory") or []
+    metrics_summary = run.get("metrics")
+    logs = run.get("logs") or []
+    model_path = resolve_model_path(run)
+    model_url = None
+    model_filename = None
+    if model_path:
+        model_url = f"/api/training-runs/{run_id}/model"
+        model_filename = model_path.name
+
     return {
         "runId": run["runId"],
         "name": run["name"],
@@ -93,6 +128,12 @@ async def get_training_run(run_id: str):
         "progress": run["progress"],
         "training": run["training"],
         "metadata": run["metadata"],
+        "metrics": metrics_history,
+        "metricsSummary": metrics_summary,
+        "logs": logs,
+        "modelPath": str(model_path) if model_path else run.get("modelPath"),
+        "namUrl": model_url,
+        "namFilename": model_filename,
         "error": run.get("error"),
     }
 
@@ -109,6 +150,8 @@ async def list_training_runs(status: str | None = None, limit: int = 100):
             continue
 
         metrics = run.get("metrics") or {}
+        model_path = resolve_model_path(run)
+        nam_url = f"/api/training-runs/{run_id}/model" if model_path else None
 
         items.append(
             {
@@ -120,7 +163,9 @@ async def list_training_runs(status: str | None = None, limit: int = 100):
                 "architecture": (run.get("training") or {}).get("architecture"),
                 "device": (run.get("training") or {}).get("device"),
                 "qualityScore": metrics.get("qualityScore"),
-                "namStatus": "NAM CREATED" if has_nam_export(run) else "",
+                "namStatus": "NAM CREATED" if model_path else "",
+                "namUrl": nam_url,
+                "namFilename": model_path.name if model_path else None,
             }
         )
 
@@ -142,4 +187,22 @@ async def get_training_run_metrics(run_id: str):
     return {
         "runId": run_id,
         "metrics": run["metrics"],
+        "metricsHistory": run.get("metricsHistory") or [],
     }
+
+
+@router.get("/training-runs/{run_id}/model")
+async def download_training_run_model(run_id: str):
+    run = runs.get(run_id)
+    if not run:
+        return JSONResponse(status_code=404, content={"detail": "Run not found"})
+
+    model_path = resolve_model_path(run)
+    if not model_path or not model_path.exists():
+        return JSONResponse(status_code=404, content={"detail": "NAM file not available for this run"})
+
+    return FileResponse(
+        model_path,
+        media_type="application/octet-stream",
+        filename=model_path.name,
+    )
