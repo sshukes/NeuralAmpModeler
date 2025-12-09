@@ -33,6 +33,46 @@ def persist_run(run_entry: Dict[str, Any]) -> None:
         json.dump(run_entry, f, indent=2)
 
 
+def _fallback_run_from_directory(run_dir: Path) -> dict | None:
+    """Try to synthesize minimal run metadata if the run.json is missing."""
+    run_id = run_dir.name
+
+    # Reconstruct minimal timestamps from the directory metadata.
+    try:
+        stat = run_dir.stat()
+        created = stat.st_mtime
+    except OSError:  # pragma: no cover - best effort only
+        created = None
+
+    model_path = None
+    exported_dir = run_dir / "exported_models"
+    if exported_dir.exists():
+        candidates = sorted(exported_dir.glob("*.nam"))
+        if candidates:
+            model_path = str(candidates[0])
+
+    status = "COMPLETED" if model_path else "UNKNOWN"
+
+    run_entry = {
+        "runId": run_id,
+        "name": run_id,
+        "description": None,
+        "status": status,
+        "createdAt": created,
+        "startedAt": created,
+        "updatedAt": created,
+        "completedAt": created if status == "COMPLETED" else None,
+        "training": {},
+        "metadata": None,
+        "progress": None,
+        "metrics": None,
+        "modelPath": model_path,
+    }
+
+    print(f"[STORE] Synthesized run metadata for {run_id} (status={status}).")
+    return run_entry
+
+
 def load_runs_from_disk() -> None:
     """Hydrate the in-memory run store from any run metadata found on disk."""
     for child in RUNS_DIR.iterdir():
@@ -40,14 +80,19 @@ def load_runs_from_disk() -> None:
             continue
 
         meta_path = child / RUN_META_FILENAME
-        if not meta_path.exists():
-            continue
 
-        try:
-            run_data = json.loads(meta_path.read_text())
-        except Exception as exc:  # pragma: no cover - defensive logging only
-            print(f"[STORE] Failed to load run metadata from {meta_path}: {exc}")
-            continue
+        if meta_path.exists():
+            try:
+                run_data = json.loads(meta_path.read_text())
+            except Exception as exc:  # pragma: no cover - defensive logging only
+                print(f"[STORE] Failed to load run metadata from {meta_path}: {exc}")
+                continue
+        else:
+            run_data = _fallback_run_from_directory(child)
+            if run_data:
+                persist_run(run_data)
+            else:
+                continue
 
         run_id = run_data.get("runId") or child.name
         run_data["runId"] = run_id
