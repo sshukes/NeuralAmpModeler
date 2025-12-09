@@ -8,7 +8,15 @@ from fastapi import APIRouter
 from fastapi.responses import FileResponse, JSONResponse
 
 from .models import NamMetadataResponse, TrainingMetadata, TrainingRunCreateRequest
-from .store import RUNS_DIR, file_meta, latest_exported_model_path, persist_run, runs
+from .store import (
+    FILES_DIR,
+    RUN_META_FILENAME,
+    RUNS_DIR,
+    file_meta,
+    latest_exported_model_path,
+    persist_run,
+    runs,
+)
 from .utils import to_iso
 from .training_worker import start_training_for_run
 
@@ -114,6 +122,8 @@ async def create_training_run(payload: TrainingRunCreateRequest):
         "runId": run_id,
         "name": payload.name,
         "description": payload.description,
+        "inputFileId": payload.inputFileId,
+        "outputFileId": payload.outputFileId,
         "status": "QUEUED",
         "createdAt": now,
         "startedAt": None,
@@ -295,3 +305,47 @@ async def download_training_run_model(run_id: str):
         media_type="application/octet-stream",
         filename=model_path.name,
     )
+
+
+@router.delete("/training-runs/{run_id}/files")
+async def delete_training_run_files(run_id: str):
+    run = runs.get(run_id)
+    if not run:
+        return JSONResponse(status_code=404, content={"detail": "Run not found"})
+
+    removed_paths: list[str] = []
+    errors: list[str] = []
+
+    run_dir = RUNS_DIR / run_id
+    if run_dir.exists():
+        for path in run_dir.rglob("*"):
+            if path.is_file() and path.name != RUN_META_FILENAME:
+                try:
+                    path.unlink()
+                    removed_paths.append(str(path))
+                except OSError as exc:  # pragma: no cover - best effort cleanup
+                    errors.append(f"Failed to remove {path}: {exc}")
+
+    for file_id in (run.get("inputFileId"), run.get("outputFileId")):
+        if not file_id:
+            continue
+        meta = file_meta.pop(file_id, None)
+        if not meta:
+            continue
+        stored_path = Path(meta.get("storedPath", ""))
+        if stored_path.exists() and stored_path.is_file():
+            try:
+                stored_path.unlink()
+                removed_paths.append(str(stored_path))
+            except OSError as exc:  # pragma: no cover - best effort cleanup
+                errors.append(f"Failed to remove {stored_path}: {exc}")
+
+    run["modelPath"] = None
+    persist_run(run)
+
+    return {
+        "runId": run_id,
+        "deletedFiles": len(removed_paths),
+        "deletedPaths": removed_paths,
+        "errors": errors,
+    }
