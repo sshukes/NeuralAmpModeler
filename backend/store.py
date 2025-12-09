@@ -1,7 +1,7 @@
 # backend/store.py
-from pathlib import Path
 import json
 import re
+from pathlib import Path
 from typing import Dict, Any
 
 # Base paths
@@ -64,6 +64,38 @@ def persist_run(run_entry: Dict[str, Any]) -> None:
     meta_path = run_dir / RUN_META_FILENAME
     with meta_path.open("w", encoding="utf-8") as f:
         json.dump(run_entry, f, indent=2)
+
+
+def delete_run_directory(run_id: str) -> tuple[list[str], list[str]]:
+    """Remove a run's directory, including metadata and exported artifacts."""
+
+    removed_paths: list[str] = []
+    errors: list[str] = []
+
+    run_dir = RUNS_DIR / run_id
+    if not run_dir.exists():
+        return removed_paths, errors
+
+    # Delete files before directories (deepest paths first)
+    for path in sorted(
+        run_dir.rglob("*"), key=lambda p: len(p.relative_to(run_dir).parts), reverse=True
+    ):
+        try:
+            if path.is_file() or path.is_symlink():
+                path.unlink()
+            else:
+                path.rmdir()
+            removed_paths.append(str(path))
+        except OSError as exc:  # pragma: no cover - best effort cleanup
+            errors.append(f"Failed to remove {path}: {exc}")
+
+    try:
+        run_dir.rmdir()
+        removed_paths.append(str(run_dir))
+    except OSError as exc:  # pragma: no cover - best effort cleanup
+        errors.append(f"Failed to remove {run_dir}: {exc}")
+
+    return removed_paths, errors
 
 
 def _fallback_run_from_directory(run_dir: Path) -> dict | None:
