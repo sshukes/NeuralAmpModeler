@@ -7,7 +7,12 @@ import json
 from fastapi import APIRouter
 from fastapi.responses import FileResponse, JSONResponse
 
-from .models import NamMetadataResponse, TrainingMetadata, TrainingRunCreateRequest
+from .models import (
+    NamMetadataResponse,
+    NamMetadataUpdateRequest,
+    TrainingMetadata,
+    TrainingRunCreateRequest,
+)
 from .store import (
     RUNS_DIR,
     delete_run_directory,
@@ -247,7 +252,7 @@ async def get_training_run_nam_metadata(run_id: str):
 
 
 @router.put("/training-runs/{run_id}/nam-metadata", response_model=NamMetadataResponse)
-async def update_training_run_nam_metadata(run_id: str, payload: TrainingMetadata):
+async def update_training_run_nam_metadata(run_id: str, payload: NamMetadataUpdateRequest):
     run = runs.get(run_id)
     if not run:
         return JSONResponse(status_code=404, content={"detail": "Run not found"})
@@ -256,11 +261,27 @@ async def update_training_run_nam_metadata(run_id: str, payload: TrainingMetadat
     if not model_path or not model_path.exists():
         return JSONResponse(status_code=404, content={"detail": "NAM file not available for this run"})
 
+    requested_filename = payload.namFilename
+    if requested_filename:
+        sanitized = Path(requested_filename).name
+        if not sanitized:
+            return JSONResponse(status_code=400, content={"detail": "Invalid NAM filename"})
+        if sanitized != model_path.name:
+            new_path = model_path.with_name(sanitized)
+            try:
+                model_path.rename(new_path)
+            except OSError as exc:  # pragma: no cover - best effort rename
+                return JSONResponse(status_code=400, content={"detail": f"Failed to rename NAM file: {exc}"})
+            model_path = new_path
+            run["modelPath"] = str(new_path)
+            persist_run(run)
+
     nam_blob = _read_nam_file(model_path)
     if nam_blob is None:
         return JSONResponse(status_code=400, content={"detail": "Unable to read NAM file"})
 
-    user_metadata = _persist_user_metadata(model_path, nam_blob, payload)
+    metadata_payload = payload.metadata or TrainingMetadata()
+    user_metadata = _persist_user_metadata(model_path, nam_blob, metadata_payload)
 
     # Keep the in-memory and on-disk run metadata aligned with the NAM file
     run["metadata"] = user_metadata

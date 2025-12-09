@@ -20,7 +20,7 @@ type NamMetadataDialogProps = {
   run: TrainingRunSummary | null;
   apiBaseUrl: string;
   onClose: () => void;
-  onSaved?: (metadata: TrainingMetadata) => void;
+  onSaved?: (metadata: TrainingMetadata, namFilename: string) => void;
 };
 
 const emptyMetadata: TrainingMetadata = {
@@ -102,16 +102,22 @@ const NamMetadataDialog: React.FC<NamMetadataDialogProps> = ({
         .map((t) => t.trim())
         .filter((t) => t.length > 0);
 
-      const payload: TrainingMetadata = {
-        ...metadata,
-        tags,
+      const trimmedFilename = namFilename.trim();
+
+      const payload = {
+        namFilename: trimmedFilename || undefined,
+        metadata: {
+          ...metadata,
+          tags,
+        },
       };
 
       const response = await client.updateNamMetadata(run.runId, payload);
       setMetadata({ ...emptyMetadata, ...(response?.metadata ?? {}) });
       setTagsInput((response?.metadata?.tags ?? []).join(', '));
+      setNamFilename(response?.namFilename ?? '');
       if (onSaved && response?.metadata) {
-        onSaved(response.metadata);
+        onSaved(response.metadata, response.namFilename);
       }
     } catch (err: any) {
       setError(err?.message ?? 'Failed to save metadata');
@@ -140,6 +146,17 @@ const NamMetadataDialog: React.FC<NamMetadataDialogProps> = ({
           </Typography>
 
           <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <TextField
+                label="NAM filename"
+                fullWidth
+                size="small"
+                value={namFilename}
+                onChange={(e) => setNamFilename(e.target.value)}
+                helperText="Set the filename used when downloading the NAM model"
+                disabled={loading}
+              />
+            </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
                 label="Modeled By"

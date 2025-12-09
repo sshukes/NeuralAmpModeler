@@ -161,6 +161,11 @@ export interface NamMetadataResponse {
     metadata: TrainingMetadata;
 }
 
+export interface NamMetadataUpdateRequest {
+    namFilename?: string;
+    metadata?: TrainingMetadata;
+}
+
 export interface ListTrainingRunsParams {
     limit?: number;
     status?: TrainingRunStatus;
