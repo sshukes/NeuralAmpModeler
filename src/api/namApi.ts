@@ -6,6 +6,8 @@ import type {
   FileUploadResponse,
   FileInspectResponse,
   LatencyDetectionResponse,
+  ListTrainingRunsParams,
+  ListTrainingRunsResponse,
 } from './namTypes';
 
 const DEFAULT_TIMEOUT_MS = 300_000; // 60s – adjust if needed
@@ -89,5 +91,22 @@ export class NamApiClient {
     return this.requestJson<TrainingRunMetrics>(
       `/training-runs/${encodeURIComponent(runId)}/metrics`
     );
+  }
+
+  async listTrainingRuns(
+    params: ListTrainingRunsParams = {}
+  ): Promise<ListTrainingRunsResponse> {
+    const search = new URLSearchParams();
+    if (params.limit !== undefined) {
+      search.set('limit', String(params.limit));
+    }
+    if (params.status) {
+      search.set('status', params.status);
+    }
+
+    const query = search.toString();
+    const path = `/training-runs${query ? `?${query}` : ''}`;
+
+    return this.requestJson<ListTrainingRunsResponse>(path);
   }
 }
