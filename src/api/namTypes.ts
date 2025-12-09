@@ -131,6 +131,7 @@ export interface TrainingRunSummary {
     architecture: TrainingArchitecture;
     device: TrainingDevice;
     qualityScore?: number;
+    namStatus?: string;
 }
 
 export interface ListTrainingRunsParams {

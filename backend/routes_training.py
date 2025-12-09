@@ -7,7 +7,7 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
 from .models import TrainingRunCreateRequest
-from .store import file_meta, persist_run, runs
+from .store import RUNS_DIR, file_meta, persist_run, runs
 from .utils import to_iso
 from .training_worker import start_training_for_run
 
@@ -16,6 +16,21 @@ router = APIRouter()
 
 def iso_or_none(ts):
     return to_iso(ts) if ts is not None else None
+
+
+def has_nam_export(run: dict) -> bool:
+    """Check if a run has an exported .nam model file."""
+    model_path = run.get("modelPath")
+    if model_path:
+        if Path(model_path).exists():
+            return True
+
+    run_id = run.get("runId")
+    if not run_id:
+        return False
+
+    exported_dir = RUNS_DIR / run_id / "exported_models"
+    return exported_dir.exists() and any(exported_dir.glob("*.nam"))
 
 
 @router.post("/training-runs")
@@ -105,6 +120,7 @@ async def list_training_runs(status: str | None = None, limit: int = 100):
                 "architecture": (run.get("training") or {}).get("architecture"),
                 "device": (run.get("training") or {}).get("device"),
                 "qualityScore": metrics.get("qualityScore"),
+                "namStatus": "NAM CREATED" if has_nam_export(run) else "",
             }
         )
 

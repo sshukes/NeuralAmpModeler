@@ -114,6 +114,67 @@ export const NamTrainerApp: React.FC = () => {
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // Logging
+    type LogLevel = 'log' | 'info' | 'warn' | 'error';
+    type LogEntry = { timestamp: string; level: LogLevel; message: string };
+    const [logEntries, setLogEntries] = useState<LogEntry[]>([]);
+
+    useEffect(() => {
+        const formatArgs = (args: unknown[]) =>
+            args
+                .map((arg) => {
+                    if (typeof arg === 'string') return arg;
+                    try {
+                        return JSON.stringify(arg);
+                    } catch (err) {
+                        return String(arg);
+                    }
+                })
+                .join(' ');
+
+        const appendLog = (level: LogLevel, args: unknown[]) => {
+            const now = new Date();
+            const entry: LogEntry = {
+                level,
+                timestamp: now.toLocaleTimeString(),
+                message: formatArgs(args),
+            };
+
+            setLogEntries((prev) => [...prev.slice(-199), entry]);
+        };
+
+        const original = {
+            log: console.log,
+            info: console.info,
+            warn: console.warn,
+            error: console.error,
+        };
+
+        (console as any).log = (...args: unknown[]) => {
+            appendLog('log', args);
+            original.log(...args);
+        };
+        (console as any).info = (...args: unknown[]) => {
+            appendLog('info', args);
+            original.info(...args);
+        };
+        (console as any).warn = (...args: unknown[]) => {
+            appendLog('warn', args);
+            original.warn(...args);
+        };
+        (console as any).error = (...args: unknown[]) => {
+            appendLog('error', args);
+            original.error(...args);
+        };
+
+        return () => {
+            (console as any).log = original.log;
+            (console as any).info = original.info;
+            (console as any).warn = original.warn;
+            (console as any).error = original.error;
+        };
+    }, []);
+
     // Handlers --------------------------------------------------------
 
     const handleFileChange =
@@ -370,7 +431,7 @@ export const NamTrainerApp: React.FC = () => {
     const renderRunStatus = () => {
         if (!runSummary) return null;
         return (
-            <div className="border rounded p-3 mb-3">
+            <div className="border rounded p-3 mb-3" style={{ minWidth: 280 }}>
                 <h4>Training Run</h4>
                 <table>
                     <tbody>
@@ -402,6 +463,57 @@ export const NamTrainerApp: React.FC = () => {
                         )}
                     </tbody>
                 </table>
+            </div>
+        );
+    };
+
+    const renderTrainingLogs = () => {
+        return (
+            <div className="border rounded p-3 mb-3" style={{ flex: 1, minWidth: 320 }}>
+                <h4>Training Logs</h4>
+                <div
+                    style={{
+                        maxHeight: 260,
+                        overflowY: 'auto',
+                        background: '#f8f8f8',
+                        padding: '0.5rem',
+                        borderRadius: 4,
+                        border: '1px solid #e0e0e0',
+                    }}
+                >
+                    {logEntries.length === 0 ? (
+                        <div style={{ color: '#666' }}>No logs yet.</div>
+                    ) : (
+                        <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                            {logEntries.map((entry, idx) => (
+                                <li key={`${entry.timestamp}-${idx}`} style={{ marginBottom: '0.35rem' }}>
+                                    <span style={{ color: '#888', marginRight: '0.5rem' }}>
+                                        [{entry.timestamp}]
+                                    </span>
+                                    <span
+                                        style={{
+                                            color:
+                                                entry.level === 'error'
+                                                    ? '#c62828'
+                                                    : entry.level === 'warn'
+                                                        ? '#ed6c02'
+                                                        : '#1e88e5',
+                                            marginRight: '0.4rem',
+                                            textTransform: 'uppercase',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 600,
+                                        }}
+                                    >
+                                        {entry.level}
+                                    </span>
+                                    <span style={{ color: '#222', wordBreak: 'break-word' }}>
+                                        {entry.message}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
             </div>
         );
     };
@@ -672,7 +784,10 @@ export const NamTrainerApp: React.FC = () => {
             {/* 5. Status + metrics */}
             <section style={{ marginBottom: '1rem' }}>
                 <h3>5. Status & Metrics</h3>
-                {renderRunStatus()}
+                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                    {renderRunStatus()}
+                    {renderTrainingLogs()}
+                </div>
                 {renderMetrics()}
             </section>
         </div>
