@@ -170,6 +170,13 @@ export interface ListTrainingRunsResponse {
     items: TrainingRunSummary[];
 }
 
+export interface RunFilesDeletionResponse {
+    runId: string;
+    deletedFiles: number;
+    deletedPaths?: string[];
+    errors?: string[];
+}
+
 // Cancel run
 
 export interface TrainingRunCancelResponse {

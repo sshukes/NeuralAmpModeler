@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import {
   Box,
@@ -82,30 +82,31 @@ const RunListPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedRun, setSelectedRun] = useState<TrainingRunSummary | null>(null);
+  const [deletingRunId, setDeletingRunId] = useState<string | null>(null);
+
+  const fetchRuns = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const data = await client.listTrainingRuns({ limit: 200 });
+      const items = Array.isArray((data as any)?.items)
+        ? (data as any).items
+        : Array.isArray(data)
+          ? data
+          : [];
+
+      setRuns(items);
+    } catch (err: any) {
+      setError(err?.message ?? 'Failed to load runs');
+    } finally {
+      setLoading(false);
+    }
+  }, [client]);
 
   useEffect(() => {
-    const fetchRuns = async () => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const data = await client.listTrainingRuns({ limit: 200 });
-        const items = Array.isArray((data as any)?.items)
-          ? (data as any).items
-          : Array.isArray(data)
-            ? data
-            : [];
-
-        setRuns(items);
-      } catch (err: any) {
-        setError(err?.message ?? 'Failed to load runs');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchRuns();
-  }, [client]);
+  }, [fetchRuns]);
 
   const openMetadataDialog = (run: TrainingRunSummary) => {
     setSelectedRun(run);
@@ -115,6 +116,18 @@ const RunListPage: React.FC = () => {
   const closeMetadataDialog = () => {
     setDialogOpen(false);
     setSelectedRun(null);
+  };
+
+  const handleDeleteFiles = async (runId: string) => {
+    setDeletingRunId(runId);
+    try {
+      await client.deleteTrainingRunFiles(runId);
+      await fetchRuns();
+    } catch (err: any) {
+      setError(err?.message ?? 'Failed to delete files for run');
+    } finally {
+      setDeletingRunId(null);
+    }
   };
 
   return (
@@ -158,6 +171,7 @@ const RunListPage: React.FC = () => {
                 <TableCell>Architecture</TableCell>
                 <TableCell>Device</TableCell>
                 <TableCell align="right">Quality</TableCell>
+                <TableCell align="center">Data Files</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -217,6 +231,20 @@ const RunListPage: React.FC = () => {
                     {run.qualityScore !== undefined && run.qualityScore !== null
                       ? run.qualityScore.toFixed(1)
                       : '–'}
+                  </TableCell>
+                  <TableCell align="center">
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      color="error"
+                      disabled={deletingRunId === run.runId}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteFiles(run.runId);
+                      }}
+                    >
+                      {deletingRunId === run.runId ? 'Deleting…' : 'Delete files'}
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}

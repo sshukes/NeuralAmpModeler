@@ -10,6 +10,7 @@ import type {
   ListTrainingRunsResponse,
   NamMetadataResponse,
   TrainingMetadata,
+  RunFilesDeletionResponse,
 } from './namTypes';
 
 const DEFAULT_TIMEOUT_MS = 300_000; // 60s – adjust if needed
@@ -127,5 +128,11 @@ export class NamApiClient {
         body: JSON.stringify(metadata),
       }
     );
+  }
+
+  async deleteTrainingRunFiles(runId: string): Promise<RunFilesDeletionResponse> {
+    return this.requestJson(`/training-runs/${encodeURIComponent(runId)}/files`, {
+      method: 'DELETE',
+    });
   }
 }
