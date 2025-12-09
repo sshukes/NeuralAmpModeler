@@ -28,6 +28,12 @@ class TrainingMetadata(BaseModel):
     tags: Optional[List[str]] = None
 
 
+class NamMetadataResponse(BaseModel):
+    runId: str
+    namFilename: str
+    metadata: TrainingMetadata
+
+
 class TrainingRunCreateRequest(BaseModel):
     name: str
     description: Optional[str] = None
