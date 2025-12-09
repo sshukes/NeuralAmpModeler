@@ -8,6 +8,8 @@ import type {
   LatencyDetectionResponse,
   ListTrainingRunsParams,
   ListTrainingRunsResponse,
+  NamMetadataResponse,
+  TrainingMetadata,
 } from './namTypes';
 
 const DEFAULT_TIMEOUT_MS = 300_000; // 60s – adjust if needed
@@ -108,5 +110,22 @@ export class NamApiClient {
     const path = `/training-runs${query ? `?${query}` : ''}`;
 
     return this.requestJson<ListTrainingRunsResponse>(path);
+  }
+
+  async getNamMetadata(runId: string): Promise<NamMetadataResponse> {
+    return this.requestJson<NamMetadataResponse>(
+      `/training-runs/${encodeURIComponent(runId)}/nam-metadata`
+    );
+  }
+
+  async updateNamMetadata(runId: string, metadata: TrainingMetadata): Promise<NamMetadataResponse> {
+    return this.requestJson<NamMetadataResponse>(
+      `/training-runs/${encodeURIComponent(runId)}/nam-metadata`,
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(metadata),
+      }
+    );
   }
 }

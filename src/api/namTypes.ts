@@ -155,6 +155,12 @@ export interface TrainingRunSummary {
     namFilename?: string;
 }
 
+export interface NamMetadataResponse {
+    runId: string;
+    namFilename: string;
+    metadata: TrainingMetadata;
+}
+
 export interface ListTrainingRunsParams {
     limit?: number;
     status?: TrainingRunStatus;

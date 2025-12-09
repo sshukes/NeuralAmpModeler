@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import {
   Box,
+  Button,
   Chip,
   CircularProgress,
   Link,
@@ -17,6 +18,7 @@ import {
 } from '@mui/material';
 import { NamApiClient } from '../api/namApi';
 import type { TrainingRunSummary, TrainingRunStatus } from '../api/namTypes';
+import NamMetadataDialog from '../components/NamMetadataDialog';
 
 const API_BASE = 'http://localhost:8000/api';
 
@@ -78,6 +80,8 @@ const RunListPage: React.FC = () => {
   const [runs, setRuns] = useState<TrainingRunSummary[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedRun, setSelectedRun] = useState<TrainingRunSummary | null>(null);
 
   useEffect(() => {
     const fetchRuns = async () => {
@@ -102,6 +106,16 @@ const RunListPage: React.FC = () => {
 
     fetchRuns();
   }, [client]);
+
+  const openMetadataDialog = (run: TrainingRunSummary) => {
+    setSelectedRun(run);
+    setDialogOpen(true);
+  };
+
+  const closeMetadataDialog = () => {
+    setDialogOpen(false);
+    setSelectedRun(null);
+  };
 
   return (
     <Box p={3}>
@@ -137,6 +151,7 @@ const RunListPage: React.FC = () => {
                 <TableCell>Name</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell>NAM File</TableCell>
+                <TableCell align="center">NAM Metadata</TableCell>
                 <TableCell>Created</TableCell>
                 <TableCell>Completed</TableCell>
                 <TableCell>Duration</TableCell>
@@ -176,6 +191,21 @@ const RunListPage: React.FC = () => {
                       run.namStatus || '–'
                     )}
                   </TableCell>
+                  <TableCell align="center">
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (run.namUrl) {
+                          openMetadataDialog(run);
+                        }
+                      }}
+                      disabled={!run.namUrl}
+                    >
+                      Edit Metadata
+                    </Button>
+                  </TableCell>
                   <TableCell>{formatDateTime(run.createdAt)}</TableCell>
                   <TableCell>{formatDateTime(run.completedAt)}</TableCell>
                   <TableCell>
@@ -194,6 +224,13 @@ const RunListPage: React.FC = () => {
           </Table>
         </TableContainer>
       )}
+
+      <NamMetadataDialog
+        open={dialogOpen}
+        run={selectedRun}
+        apiBaseUrl={API_BASE}
+        onClose={closeMetadataDialog}
+      />
     </Box>
   );
 };

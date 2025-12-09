@@ -3,10 +3,11 @@ from pathlib import Path
 import time
 import uuid
 
+import json
 from fastapi import APIRouter
 from fastapi.responses import FileResponse, JSONResponse
 
-from .models import TrainingRunCreateRequest
+from .models import NamMetadataResponse, TrainingMetadata, TrainingRunCreateRequest
 from .store import RUNS_DIR, file_meta, latest_exported_model_path, persist_run, runs
 from .utils import to_iso
 from .training_worker import start_training_for_run
@@ -51,6 +52,45 @@ def resolve_model_path(run: dict) -> Path | None:
     run["modelPath"] = str(chosen)
     persist_run(run)
     return chosen
+
+
+USER_METADATA_KEY = "userMetadata"
+
+
+def _read_nam_file(model_path: Path) -> dict | None:
+    try:
+        content = model_path.read_text()
+    except OSError:
+        return None
+
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError:
+        return None
+
+
+def _extract_user_metadata(nam_blob: dict | None) -> dict:
+    metadata = (nam_blob or {}).get("metadata") or {}
+    user_metadata = metadata.get(USER_METADATA_KEY)
+    return user_metadata if isinstance(user_metadata, dict) else {}
+
+
+def _coerce_training_metadata(raw: dict | None) -> TrainingMetadata:
+    if not isinstance(raw, dict):
+        return TrainingMetadata()
+
+    allowed_keys = set(TrainingMetadata.model_fields.keys())
+    filtered = {k: v for k, v in raw.items() if k in allowed_keys}
+    return TrainingMetadata(**filtered)
+
+
+def _persist_user_metadata(model_path: Path, nam_blob: dict, payload: TrainingMetadata) -> dict:
+    metadata = nam_blob.setdefault("metadata", {})
+    user_metadata = payload.model_dump(exclude_none=True)
+    metadata[USER_METADATA_KEY] = user_metadata
+
+    model_path.write_text(json.dumps(nam_blob, indent=2))
+    return user_metadata
 
 
 @router.post("/training-runs")
@@ -171,6 +211,57 @@ async def list_training_runs(status: str | None = None, limit: int = 100):
             break
 
     return {"items": items}
+
+
+@router.get("/training-runs/{run_id}/nam-metadata", response_model=NamMetadataResponse)
+async def get_training_run_nam_metadata(run_id: str):
+    run = runs.get(run_id)
+    if not run:
+        return JSONResponse(status_code=404, content={"detail": "Run not found"})
+
+    model_path = resolve_model_path(run)
+    if not model_path or not model_path.exists():
+        return JSONResponse(status_code=404, content={"detail": "NAM file not available for this run"})
+
+    nam_blob = _read_nam_file(model_path)
+    user_metadata = _extract_user_metadata(nam_blob)
+
+    if not user_metadata:
+        # Fall back to whatever we have stored alongside the run
+        user_metadata = run.get("metadata") or {}
+
+    return {
+        "runId": run_id,
+        "namFilename": model_path.name,
+        "metadata": _coerce_training_metadata(user_metadata),
+    }
+
+
+@router.put("/training-runs/{run_id}/nam-metadata", response_model=NamMetadataResponse)
+async def update_training_run_nam_metadata(run_id: str, payload: TrainingMetadata):
+    run = runs.get(run_id)
+    if not run:
+        return JSONResponse(status_code=404, content={"detail": "Run not found"})
+
+    model_path = resolve_model_path(run)
+    if not model_path or not model_path.exists():
+        return JSONResponse(status_code=404, content={"detail": "NAM file not available for this run"})
+
+    nam_blob = _read_nam_file(model_path)
+    if nam_blob is None:
+        return JSONResponse(status_code=400, content={"detail": "Unable to read NAM file"})
+
+    user_metadata = _persist_user_metadata(model_path, nam_blob, payload)
+
+    # Keep the in-memory and on-disk run metadata aligned with the NAM file
+    run["metadata"] = user_metadata
+    persist_run(run)
+
+    return {
+        "runId": run_id,
+        "namFilename": model_path.name,
+        "metadata": _coerce_training_metadata(user_metadata),
+    }
 
 
 @router.get("/training-runs/{run_id}/metrics")
