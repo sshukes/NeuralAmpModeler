@@ -9,9 +9,8 @@ from fastapi.responses import FileResponse, JSONResponse
 
 from .models import NamMetadataResponse, TrainingMetadata, TrainingRunCreateRequest
 from .store import (
-    FILES_DIR,
-    RUN_META_FILENAME,
     RUNS_DIR,
+    delete_run_directory,
     file_meta,
     latest_exported_model_path,
     persist_run,
@@ -316,15 +315,9 @@ async def delete_training_run_files(run_id: str):
     removed_paths: list[str] = []
     errors: list[str] = []
 
-    run_dir = RUNS_DIR / run_id
-    if run_dir.exists():
-        for path in run_dir.rglob("*"):
-            if path.is_file() and path.name != RUN_META_FILENAME:
-                try:
-                    path.unlink()
-                    removed_paths.append(str(path))
-                except OSError as exc:  # pragma: no cover - best effort cleanup
-                    errors.append(f"Failed to remove {path}: {exc}")
+    run_removed_paths, run_errors = delete_run_directory(run_id)
+    removed_paths.extend(run_removed_paths)
+    errors.extend(run_errors)
 
     for file_id in (run.get("inputFileId"), run.get("outputFileId")):
         if not file_id:
@@ -340,8 +333,7 @@ async def delete_training_run_files(run_id: str):
             except OSError as exc:  # pragma: no cover - best effort cleanup
                 errors.append(f"Failed to remove {stored_path}: {exc}")
 
-    run["modelPath"] = None
-    persist_run(run)
+    runs.pop(run_id, None)
 
     return {
         "runId": run_id,
