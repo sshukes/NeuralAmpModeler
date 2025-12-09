@@ -17,7 +17,7 @@ import {
   Typography,
 } from '@mui/material';
 import { NamApiClient } from '../api/namApi';
-import type { TrainingRunSummary, TrainingRunStatus } from '../api/namTypes';
+import type { TrainingMetadata, TrainingRunSummary, TrainingRunStatus } from '../api/namTypes';
 import NamMetadataDialog from '../components/NamMetadataDialog';
 
 const API_BASE = 'http://localhost:8000/api';
@@ -111,6 +111,30 @@ const RunListPage: React.FC = () => {
   const openMetadataDialog = (run: TrainingRunSummary) => {
     setSelectedRun(run);
     setDialogOpen(true);
+  };
+
+  const handleMetadataSaved = (_: TrainingMetadata, namFilename: string) => {
+    if (!selectedRun) return;
+
+    setRuns((prev) =>
+      prev.map((run) =>
+        run.runId === selectedRun.runId
+          ? {
+              ...run,
+              namFilename,
+            }
+          : run
+      )
+    );
+
+    setSelectedRun((prev) =>
+      prev
+        ? {
+            ...prev,
+            namFilename,
+          }
+        : prev
+    );
   };
 
   const closeMetadataDialog = () => {
@@ -258,6 +282,7 @@ const RunListPage: React.FC = () => {
         run={selectedRun}
         apiBaseUrl={API_BASE}
         onClose={closeMetadataDialog}
+        onSaved={handleMetadataSaved}
       />
     </Box>
   );

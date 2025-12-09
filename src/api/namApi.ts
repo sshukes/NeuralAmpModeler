@@ -11,6 +11,7 @@ import type {
   NamMetadataResponse,
   TrainingMetadata,
   RunFilesDeletionResponse,
+  NamMetadataUpdateRequest,
 } from './namTypes';
 
 const DEFAULT_TIMEOUT_MS = 300_000; // 60s – adjust if needed
@@ -119,13 +120,16 @@ export class NamApiClient {
     );
   }
 
-  async updateNamMetadata(runId: string, metadata: TrainingMetadata): Promise<NamMetadataResponse> {
+  async updateNamMetadata(
+    runId: string,
+    payload: NamMetadataUpdateRequest
+  ): Promise<NamMetadataResponse> {
     return this.requestJson<NamMetadataResponse>(
       `/training-runs/${encodeURIComponent(runId)}/nam-metadata`,
       {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(metadata),
+        body: JSON.stringify(payload),
       }
     );
   }

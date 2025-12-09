@@ -34,6 +34,11 @@ class NamMetadataResponse(BaseModel):
     metadata: TrainingMetadata
 
 
+class NamMetadataUpdateRequest(BaseModel):
+    namFilename: Optional[str] = None
+    metadata: Optional[TrainingMetadata] = None
+
+
 class TrainingRunCreateRequest(BaseModel):
     name: str
     description: Optional[str] = None
