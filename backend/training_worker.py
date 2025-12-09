@@ -14,7 +14,7 @@ from nam.train import core as nam_core
 from nam import data as nam_data
 from nam.train.colab import run as nam_run
 
-from .store import RUNS_DIR, file_meta, runs
+from .store import RUNS_DIR, file_meta, persist_run, runs
 from .audio_io import repair_audio_in_place
 from .models import TrainingRunCreateRequest
 
@@ -58,6 +58,7 @@ def _run_training_worker(run_id: str, payload: TrainingRunCreateRequest, in_path
         run_entry["status"] = "RUNNING"
         run_entry["startedAt"] = time.time()
         run_entry["updatedAt"] = run_entry["startedAt"]
+        persist_run(run_entry)
 
         print("[TRAIN] --- STEP 1: PREPARING AUDIO ---")
         repair_audio_in_place(in_path)
@@ -140,6 +141,7 @@ def _run_training_worker(run_id: str, payload: TrainingRunCreateRequest, in_path
             "timeAlignmentErrorSamples": 0,
             "qualityScore": 0.0,
         }
+        persist_run(run_entry)
 
         print(f"[TRAIN {run_id}] Training completed.")
 
@@ -148,6 +150,7 @@ def _run_training_worker(run_id: str, payload: TrainingRunCreateRequest, in_path
         run_entry["status"] = "FAILED"
         run_entry["updatedAt"] = time.time()
         run_entry["error"] = str(e)
+        persist_run(run_entry)
 
 
 def start_training_for_run(run_id: str, payload: TrainingRunCreateRequest, in_path: Path, out_path: Path) -> None:
