@@ -1,6 +1,7 @@
 # backend/store.py
 from pathlib import Path
 import json
+import re
 from typing import Dict, Any
 
 # Base paths
@@ -17,6 +18,38 @@ file_meta: Dict[str, dict] = {}
 runs: Dict[str, dict] = {}
 
 RUN_META_FILENAME = "run.json"
+
+
+def _version_key(path: Path) -> tuple[int, str]:
+    match = re.search(r"(\d+)$", path.name)
+    return (int(match.group(1)) if match else -1, path.name)
+
+
+def latest_exported_model_path(run_dir: Path) -> Path | None:
+    """Return the newest exported NAM file within a run directory.
+
+    The exporter writes models under ``exported_models/version_<n>/``. We pick the
+    highest version number (falling back to direct children of ``exported_models``)
+    and then return the first ``*.nam`` file in that folder.
+    """
+
+    exported_dir = run_dir / "exported_models"
+    if not exported_dir.exists():
+        return None
+
+    version_dirs = [p for p in exported_dir.iterdir() if p.is_dir()]
+    if version_dirs:
+        latest_version_dir = max(version_dirs, key=_version_key)
+        candidates = sorted(latest_version_dir.glob("*.nam"))
+        if candidates:
+            return candidates[0]
+
+    # Fallback for legacy layout where files live directly under exported_models
+    candidates = sorted(exported_dir.glob("*.nam"))
+    if candidates:
+        return candidates[0]
+
+    return None
 
 
 def persist_run(run_entry: Dict[str, Any]) -> None:
@@ -44,12 +77,9 @@ def _fallback_run_from_directory(run_dir: Path) -> dict | None:
     except OSError:  # pragma: no cover - best effort only
         created = None
 
-    model_path = None
-    exported_dir = run_dir / "exported_models"
-    if exported_dir.exists():
-        candidates = sorted(exported_dir.glob("*.nam"))
-        if candidates:
-            model_path = str(candidates[0])
+    model_path = latest_exported_model_path(run_dir)
+    if model_path:
+        model_path = str(model_path)
 
     status = "COMPLETED" if model_path else "UNKNOWN"
 

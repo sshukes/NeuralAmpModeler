@@ -7,7 +7,7 @@ from fastapi import APIRouter
 from fastapi.responses import FileResponse, JSONResponse
 
 from .models import TrainingRunCreateRequest
-from .store import RUNS_DIR, file_meta, persist_run, runs
+from .store import RUNS_DIR, file_meta, latest_exported_model_path, persist_run, runs
 from .utils import to_iso
 from .training_worker import start_training_for_run
 
@@ -29,8 +29,8 @@ def has_nam_export(run: dict) -> bool:
     if not run_id:
         return False
 
-    exported_dir = RUNS_DIR / run_id / "exported_models"
-    return exported_dir.exists() and any(exported_dir.glob("*.nam"))
+    run_dir = RUNS_DIR / run_id
+    return latest_exported_model_path(run_dir) is not None
 
 
 def resolve_model_path(run: dict) -> Path | None:
@@ -45,12 +45,9 @@ def resolve_model_path(run: dict) -> Path | None:
     if not run_id:
         return None
 
-    exported_dir = RUNS_DIR / run_id / "exported_models"
-    candidates = sorted(exported_dir.glob("*.nam"))
-    if not candidates:
+    chosen = latest_exported_model_path(RUNS_DIR / run_id)
+    if not chosen:
         return None
-
-    chosen = candidates[0]
     run["modelPath"] = str(chosen)
     persist_run(run)
     return chosen
