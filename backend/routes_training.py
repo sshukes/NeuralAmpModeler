@@ -151,11 +151,12 @@ async def list_training_runs(status: str | None = None, limit: int = 100):
 
         metrics = run.get("metrics") or {}
         model_path = resolve_model_path(run)
-        nam_url = f"/api/training-runs/{run_id}/model" if model_path else None
+        run_id = run.get("runId")
+        nam_url = f"/api/training-runs/{run_id}/model" if model_path and run_id else None
 
         items.append(
             {
-                "runId": run.get("runId"),
+                "runId": run_id,
                 "name": run.get("name"),
                 "status": run.get("status"),
                 "createdAt": iso_or_none(run.get("createdAt")),
