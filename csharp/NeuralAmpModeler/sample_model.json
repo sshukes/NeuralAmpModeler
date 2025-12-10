@@ -1,0 +1,17 @@
+{
+  "inputSize": 1,
+  "name": "Demo tube-like amp",
+  "outputGain": 0.85,
+  "layers": [
+    {
+      "weights": [[1.2]],
+      "bias": [0.1],
+      "activation": "tanh"
+    },
+    {
+      "weights": [[1.8]],
+      "bias": [0.0],
+      "activation": "tanh"
+    }
+  ]
+}
