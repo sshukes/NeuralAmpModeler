@@ -25,6 +25,17 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
+import {
+  consoleButtonSx,
+  consoleCardSx,
+  consoleColors,
+  consoleDividerSx,
+  consoleHeadingSx,
+  consoleLogBoxSx,
+  consoleOverlaySx,
+  consolePageSx,
+  consoleTextFieldSx,
+} from '../theme/consoleTheme';
 
 type RunStatus = 'QUEUED' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
 
@@ -178,18 +189,26 @@ const RunDetailsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <Box p={3}>
-        <Typography>Loading run details...</Typography>
+      <Box sx={consolePageSx}>
+        <Box sx={consoleOverlaySx} />
+        <Stack spacing={2} sx={{ position: 'relative', zIndex: 1 }}>
+          <Typography variant="h6" sx={consoleHeadingSx}>
+            Loading run details...
+          </Typography>
+        </Stack>
       </Box>
     );
   }
 
   if (error || !run) {
     return (
-      <Box p={3}>
-        <Typography color="error">
-          {error || 'Run not found'}
-        </Typography>
+      <Box sx={consolePageSx}>
+        <Box sx={consoleOverlaySx} />
+        <Stack spacing={2} sx={{ position: 'relative', zIndex: 1 }}>
+          <Typography color="error" sx={{ textShadow: '0 0 10px rgba(255,0,0,0.3)' }}>
+            {error || 'Run not found'}
+          </Typography>
+        </Stack>
       </Box>
     );
   }
@@ -199,258 +218,258 @@ const RunDetailsPage: React.FC = () => {
     : run.currentEpoch ?? 0;
 
   return (
-    <Box p={3}>
-      {/* Header */}
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={3}
-      >
-        <Box>
-          <Typography variant="h5" gutterBottom>
-            {run.name || `Run ${run.id}`}
-          </Typography>
-          <Stack direction="row" spacing={1} alignItems="center">
-            <Chip
-              label={run.status}
-              color={statusColor(run.status)}
-              size="small"
-            />
-            <Typography variant="body2">
-              Started: {formatDateTime(run.startedAt)}
+    <Box sx={consolePageSx}>
+      <Box sx={consoleOverlaySx} />
+      <Stack spacing={2} sx={{ position: 'relative', zIndex: 1 }}>
+        {/* Header */}
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+        >
+          <Box>
+            <Typography variant="h5" gutterBottom sx={{ ...consoleHeadingSx, letterSpacing: 2 }}>
+              {run.name || `Run ${run.id}`}
             </Typography>
-            {run.endedAt && (
-              <Typography variant="body2">
-                • Ended: {formatDateTime(run.endedAt)}
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} alignItems={{ xs: 'flex-start', md: 'center' }}>
+              <Chip
+                label={run.status}
+                color={statusColor(run.status)}
+                size="small"
+              />
+              <Typography variant="body2" sx={{ color: consoleColors.accent }}>
+                Started: {formatDateTime(run.startedAt)}
               </Typography>
-            )}
-            {run.device && (
-              <Typography variant="body2">
-                • Device: {run.device}
-              </Typography>
+              {run.endedAt && (
+                <Typography variant="body2" sx={{ color: consoleColors.accent }}>
+                  • Ended: {formatDateTime(run.endedAt)}
+                </Typography>
+              )}
+              {run.device && (
+                <Typography variant="body2" sx={{ color: consoleColors.accent }}>
+                  • Device: {run.device}
+                </Typography>
+              )}
+            </Stack>
+          </Box>
+
+          <Stack direction="row" spacing={1}>
+            <Button variant="contained" sx={consoleButtonSx} onClick={() => navigate('/runs')}>
+              Back to runs
+            </Button>
+            {run.status === 'RUNNING' && (
+              <Button
+                variant="contained"
+                color="error"
+                startIcon={<StopIcon />}
+                onClick={handleStop}
+                sx={{ ...consoleButtonSx, backgroundColor: 'rgba(28, 6, 6, 0.85)' }}
+              >
+                Stop
+              </Button>
             )}
           </Stack>
+        </Stack>
+
+        {/* Top row: stats + loss chart */}
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', md: '1fr 2fr' },
+            gap: 2,
+          }}
+        >
+          {/* Stats card */}
+          <Card sx={consoleCardSx}>
+            <CardContent>
+              <Typography variant="subtitle1" gutterBottom sx={consoleHeadingSx}>
+                Run Stats
+              </Typography>
+              <Stack spacing={1}>
+                <Typography variant="body2" sx={{ color: consoleColors.accent }}>
+                  Current epoch:{' '}
+                  <strong>
+                    {latestEpoch}/{run.totalEpochs ?? '-'}
+                  </strong>
+                </Typography>
+                <Typography variant="body2" sx={{ color: consoleColors.accent }}>
+                  Best val loss:{' '}
+                  <strong>
+                    {run.bestValLoss !== undefined
+                      ? run.bestValLoss.toFixed(5)
+                      : '-'}
+                  </strong>
+                </Typography>
+                <Typography variant="body2" sx={{ color: consoleColors.accent }}>
+                  Error ratio:{' '}
+                  <strong>
+                    {run.errorRatio !== undefined
+                      ? run.errorRatio.toFixed(4)
+                      : '-'}
+                  </strong>
+                </Typography>
+              </Stack>
+            </CardContent>
+          </Card>
+
+          {/* Loss chart */}
+          <Card sx={consoleCardSx}>
+            <CardContent>
+              <Typography variant="subtitle1" gutterBottom sx={consoleHeadingSx}>
+                Loss over epochs
+              </Typography>
+              <Divider sx={{ ...consoleDividerSx, mb: 2 }} />
+              <Box height={260}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={metrics}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(132,255,186,0.25)" />
+                    <XAxis dataKey="epoch" stroke={consoleColors.accent} />
+                    <YAxis stroke={consoleColors.accent} />
+                    <Tooltip contentStyle={{ backgroundColor: '#04210c', border: consoleColors.border, color: consoleColors.accent }} />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="train_loss"
+                      name="Train loss"
+                      dot={false}
+                      stroke={consoleColors.neon}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="val_loss"
+                      name="Val loss"
+                      dot={false}
+                      stroke="#9cf7ff"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </Box>
+            </CardContent>
+          </Card>
         </Box>
 
-        <Stack direction="row" spacing={1}>
-          <Button variant="outlined" onClick={() => navigate('/runs')}>
-            Back to runs
-          </Button>
-          {run.status === 'RUNNING' && (
-            <Button
-              variant="outlined"
-              color="error"
-              startIcon={<StopIcon />}
-              onClick={handleStop}
-            >
-              Stop
-            </Button>
-          )}
-        </Stack>
-      </Stack>
-
-      {/* Top row: stats + loss chart */}
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: { xs: '1fr', md: '1fr 2fr' },
-          gap: 2,
-          mb: 2,
-        }}
-      >
-        {/* Stats card */}
-        <Card>
-          <CardContent>
-            <Typography variant="subtitle1" gutterBottom>
-              Run Stats
-            </Typography>
-            <Stack spacing={1}>
-              <Typography variant="body2">
-                Current epoch:{' '}
-                <strong>
-                  {latestEpoch}/{run.totalEpochs ?? '-'}
-                </strong>
+        {/* Bottom row: error ratio + logs */}
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+            gap: 2,
+          }}
+        >
+          {/* Error ratio chart */}
+          <Card sx={consoleCardSx}>
+            <CardContent>
+              <Typography variant="subtitle1" gutterBottom sx={consoleHeadingSx}>
+                Error-signal ratio
               </Typography>
-              <Typography variant="body2">
-                Best val loss:{' '}
-                <strong>
-                  {run.bestValLoss !== undefined
-                    ? run.bestValLoss.toFixed(5)
-                    : '-'}
-                </strong>
-              </Typography>
-              <Typography variant="body2">
-                Error ratio:{' '}
-                <strong>
-                  {run.errorRatio !== undefined
-                    ? run.errorRatio.toFixed(4)
-                    : '-'}
-                </strong>
-              </Typography>
-            </Stack>
-          </CardContent>
-        </Card>
+              <Divider sx={{ ...consoleDividerSx, mb: 2 }} />
+              <Box height={240}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={metrics}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(132,255,186,0.25)" />
+                    <XAxis dataKey="epoch" stroke={consoleColors.accent} />
+                    <YAxis stroke={consoleColors.accent} />
+                    <Tooltip contentStyle={{ backgroundColor: '#04210c', border: consoleColors.border, color: consoleColors.accent }} />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="error_ratio"
+                      name="Error ratio"
+                      dot={false}
+                      stroke="#ffb347"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </Box>
+            </CardContent>
+          </Card>
 
-        {/* Loss chart */}
-        <Card>
-          <CardContent>
-            <Typography variant="subtitle1" gutterBottom>
-              Loss over epochs
-            </Typography>
-            <Box height={260}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={metrics}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="epoch" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="train_loss"
-                    name="Train loss"
-                    dot={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="val_loss"
-                    name="Val loss"
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </Box>
-          </CardContent>
-        </Card>
-      </Box>
-
-      {/* Bottom row: error ratio + logs */}
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
-          gap: 2,
-        }}
-      >
-        {/* Error ratio chart */}
-        <Card>
-          <CardContent>
-            <Typography variant="subtitle1" gutterBottom>
-              Error-signal ratio
-            </Typography>
-            <Box height={240}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={metrics}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="epoch" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="error_ratio"
-                    name="Error ratio"
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </Box>
-          </CardContent>
-        </Card>
-
-        {/* Logs */}
-        <Card sx={{ height: '100%' }}>
-          <CardContent
-            sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}
-          >
-            <Stack
-              direction="row"
-              justifyContent="space-between"
-              alignItems="center"
-              mb={1}
+          {/* Logs */}
+          <Card sx={{ ...consoleCardSx, height: '100%' }}>
+            <CardContent
+              sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}
             >
-              <Typography variant="subtitle1">Logs</Typography>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <TextField
-                  size="small"
-                  label="Search"
-                  value={logSearch}
-                  onChange={(e) => setLogSearch(e.target.value)}
-                />
-                <TextField
-                  size="small"
-                  label="Level"
-                  select
-                  SelectProps={{ native: true }}
-                  value={logFilter}
-                  onChange={(e) =>
-                    setLogFilter(e.target.value as LogLevel | 'ALL')
-                  }
-                  sx={{ minWidth: 90 }}
-                >
-                  <option value="ALL">ALL</option>
-                  <option value="DEBUG">DEBUG</option>
-                  <option value="INFO">INFO</option>
-                  <option value="WARN">WARN</option>
-                  <option value="ERROR">ERROR</option>
-                </TextField>
-                <IconButton size="small" onClick={copyLogsToClipboard}>
-                  <ContentCopyIcon fontSize="small" />
-                </IconButton>
-              </Stack>
-            </Stack>
-
-            <Divider sx={{ mb: 1 }} />
-
-            <Box
-              sx={{
-                flex: 1,
-                overflow: 'auto',
-                bgcolor: 'background.paper',
-                fontFamily: 'monospace',
-                fontSize: 12,
-                p: 1,
-                borderRadius: 1,
-                border: '1px solid',
-                borderColor: 'divider',
-              }}
-            >
-              {filteredLogs.length === 0 ? (
-                <Typography variant="body2" color="text.secondary">
-                  No logs yet.
+              <Stack
+                direction="row"
+                justifyContent="space-between"
+                alignItems="center"
+                mb={1}
+              >
+                <Typography variant="subtitle1" sx={consoleHeadingSx}>
+                  Logs
                 </Typography>
-              ) : (
-                filteredLogs.map((log, idx) => (
-                  <Box key={`${log.timestamp}-${idx}`}>
-                    <Typography
-                      component="span"
-                      sx={{ color: 'text.secondary', mr: 1 }}
-                    >
-                      [{log.timestamp}]
-                    </Typography>
-                    <Typography
-                      component="span"
-                      sx={{
-                        mr: 1,
-                        color:
-                          log.level === 'ERROR'
-                            ? 'error.main'
-                            : log.level === 'WARN'
-                            ? 'warning.main'
-                            : 'text.secondary',
-                      }}
-                    >
-                      [{log.level}]
-                    </Typography>
-                    <Typography component="span">{log.message}</Typography>
-                  </Box>
-                ))
-              )}
-            </Box>
-          </CardContent>
-        </Card>
-      </Box>
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'flex-start', sm: 'center' }}>
+                  <TextField
+                    size="small"
+                    label="Search"
+                    value={logSearch}
+                    onChange={(e) => setLogSearch(e.target.value)}
+                    sx={consoleTextFieldSx}
+                  />
+                  <TextField
+                    size="small"
+                    label="Level"
+                    select
+                    SelectProps={{ native: true }}
+                    value={logFilter}
+                    onChange={(e) =>
+                      setLogFilter(e.target.value as LogLevel | 'ALL')
+                    }
+                    sx={{ ...consoleTextFieldSx, minWidth: 120 }}
+                  >
+                    <option value="ALL">ALL</option>
+                    <option value="DEBUG">DEBUG</option>
+                    <option value="INFO">INFO</option>
+                    <option value="WARN">WARN</option>
+                    <option value="ERROR">ERROR</option>
+                  </TextField>
+                  <IconButton size="small" onClick={copyLogsToClipboard} sx={{ color: consoleColors.accent }}>
+                    <ContentCopyIcon fontSize="small" />
+                  </IconButton>
+                </Stack>
+              </Stack>
+
+              <Divider sx={{ ...consoleDividerSx, mb: 1 }} />
+
+              <Box sx={consoleLogBoxSx}>
+                {filteredLogs.length === 0 ? (
+                  <Typography variant="body2" sx={{ color: consoleColors.accent }}>
+                    No logs yet.
+                  </Typography>
+                ) : (
+                  filteredLogs.map((log, idx) => (
+                    <Box key={`${log.timestamp}-${idx}`}>
+                      <Typography
+                        component="span"
+                        sx={{ color: 'rgba(211,255,231,0.7)', mr: 1 }}
+                      >
+                        [{log.timestamp}]
+                      </Typography>
+                      <Typography
+                        component="span"
+                        sx={{
+                          mr: 1,
+                          color:
+                            log.level === 'ERROR'
+                              ? '#ff8080'
+                              : log.level === 'WARN'
+                              ? '#f9d65c'
+                              : consoleColors.accent,
+                        }}
+                      >
+                        [{log.level}]
+                      </Typography>
+                      <Typography component="span" sx={{ color: '#e0fff1' }}>
+                        {log.message}
+                      </Typography>
+                    </Box>
+                  ))
+                )}
+              </Box>
+            </CardContent>
+          </Card>
+        </Box>
+      </Stack>
     </Box>
   );
 };
