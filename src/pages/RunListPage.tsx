@@ -19,6 +19,15 @@ import {
 import { NamApiClient } from '../api/namApi';
 import type { TrainingMetadata, TrainingRunSummary, TrainingRunStatus } from '../api/namTypes';
 import NamMetadataDialog from '../components/NamMetadataDialog';
+import {
+  consoleButtonSx,
+  consoleCardSx,
+  consoleHeadingSx,
+  consoleLinkSx,
+  consoleOverlaySx,
+  consolePageSx,
+  consoleTableCellSx,
+} from '../theme/consoleTheme';
 
 const API_BASE = 'http://localhost:8000/api';
 
@@ -155,17 +164,21 @@ const RunListPage: React.FC = () => {
   };
 
   return (
-    <Box p={3}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h5">Training Runs</Typography>
-        <Link component={RouterLink} to="/">
-          Back to trainer
-        </Link>
-      </Stack>
+    <Box sx={consolePageSx}>
+      <Box sx={consoleOverlaySx} />
+      <Stack spacing={2} sx={{ position: 'relative', zIndex: 1 }}>
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
+          <Typography variant="h5" sx={{ ...consoleHeadingSx, letterSpacing: 2 }}>
+            Training Runs
+          </Typography>
+          <Link component={RouterLink} to="/" sx={consoleLinkSx}>
+            Back to trainer
+          </Link>
+        </Stack>
 
       {loading && (
         <Stack direction="row" spacing={1} alignItems="center" mb={2}>
-          <CircularProgress size={20} />
+          <CircularProgress size={20} color="inherit" />
           <Typography>Loading runs…</Typography>
         </Stack>
       )}
@@ -181,8 +194,22 @@ const RunListPage: React.FC = () => {
       )}
 
       {runs.length > 0 && (
-        <TableContainer component={Paper}>
-          <Table size="small">
+        <TableContainer component={Paper} sx={consoleCardSx}>
+          <Table
+            size="small"
+            sx={{
+              '& .MuiTableHead-root .MuiTableCell-root': {
+                ...consoleTableCellSx,
+                fontWeight: 800,
+                textTransform: 'uppercase',
+                letterSpacing: 1,
+              },
+              '& .MuiTableBody-root .MuiTableCell-root': consoleTableCellSx,
+              '& .MuiTableRow-root:hover': {
+                backgroundColor: 'rgba(54,255,143,0.06)',
+              },
+            }}
+          >
             <TableHead>
               <TableRow>
                 <TableCell>Name</TableCell>
@@ -231,7 +258,7 @@ const RunListPage: React.FC = () => {
                   </TableCell>
                   <TableCell align="center">
                     <Button
-                      variant="outlined"
+                      variant="contained"
                       size="small"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -240,6 +267,7 @@ const RunListPage: React.FC = () => {
                         }
                       }}
                       disabled={!run.namUrl}
+                      sx={consoleButtonSx}
                     >
                       Edit Metadata
                     </Button>
@@ -258,7 +286,7 @@ const RunListPage: React.FC = () => {
                   </TableCell>
                   <TableCell align="center">
                     <Button
-                      variant="outlined"
+                      variant="contained"
                       size="small"
                       color="error"
                       disabled={deletingRunId === run.runId}
@@ -266,6 +294,7 @@ const RunListPage: React.FC = () => {
                         e.stopPropagation();
                         handleDeleteFiles(run.runId);
                       }}
+                      sx={{ ...consoleButtonSx, backgroundColor: 'rgba(28, 6, 6, 0.85)' }}
                     >
                       {deletingRunId === run.runId ? 'Deleting…' : 'Delete files'}
                     </Button>
@@ -284,6 +313,7 @@ const RunListPage: React.FC = () => {
         onClose={closeMetadataDialog}
         onSaved={handleMetadataSaved}
       />
+      </Stack>
     </Box>
   );
 };
