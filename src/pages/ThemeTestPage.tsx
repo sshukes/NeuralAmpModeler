@@ -15,7 +15,7 @@ import MemoryIcon from '@mui/icons-material/Memory';
 import GraphicEqIcon from '@mui/icons-material/GraphicEq';
 import FlashOnIcon from '@mui/icons-material/FlashOn';
 
-const neonGreen = '#36ff8f';
+const neonGreen = '#84ffba';
 const neonBorder = '1px solid rgba(54, 255, 143, 0.7)';
 
 const cardStyle = {
@@ -36,7 +36,7 @@ const consoleText = [
   '[1983:DONE] Ready for shred mode. >_'
 ];
 
-const accentText = '#8affc1';
+const accentText = '#d3ffe7';
 
 const neonButtonStyles = {
   border: neonBorder,
@@ -74,6 +74,7 @@ const ThemeTestPage: React.FC = () => {
         position: 'relative',
         overflow: 'hidden',
         p: { xs: 3, md: 5 },
+        textShadow: '0 0 10px rgba(132,255,186,0.45)',
       }}
     >
       <Box
@@ -93,7 +94,7 @@ const ThemeTestPage: React.FC = () => {
             <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: 3, textTransform: 'uppercase' }}>
               Console Theme Preview
             </Typography>
-            <Typography variant="subtitle1" sx={{ color: accentText }}>
+            <Typography variant="subtitle1" sx={{ color: accentText, textShadow: '0 0 12px rgba(211,255,231,0.65)' }}>
               Neon green phosphor, CRT glow, and command-line attitude—circa 1980s.
             </Typography>
           </Box>
@@ -103,7 +104,11 @@ const ThemeTestPage: React.FC = () => {
           <Grid item xs={12} md={8}>
             <Card sx={cardStyle}>
               <CardContent>
-                <Typography variant="h6" gutterBottom sx={{ letterSpacing: 2 }}>
+                <Typography
+                  variant="h6"
+                  gutterBottom
+                  sx={{ letterSpacing: 2, color: accentText, textShadow: '0 0 10px rgba(211,255,231,0.6)' }}
+                >
                   System Log
                 </Typography>
                 <Divider sx={{ borderColor: 'rgba(54,255,143,0.35)', mb: 2 }} />
@@ -119,6 +124,7 @@ const ThemeTestPage: React.FC = () => {
                     flexDirection: 'column',
                     gap: 1,
                     overflow: 'hidden',
+                    color: '#e0fff1',
                   }}
                 >
                   {consoleText.map((line) => (
@@ -153,7 +159,11 @@ const ThemeTestPage: React.FC = () => {
           <Grid item xs={12} md={4}>
             <Card sx={cardStyle}>
               <CardContent>
-                <Typography variant="h6" gutterBottom sx={{ letterSpacing: 2 }}>
+                <Typography
+                  variant="h6"
+                  gutterBottom
+                  sx={{ letterSpacing: 2, color: accentText, textShadow: '0 0 10px rgba(211,255,231,0.6)' }}
+                >
                   Control Pad
                 </Typography>
                 <Divider sx={{ borderColor: 'rgba(54,255,143,0.35)', mb: 2 }} />
@@ -177,7 +187,11 @@ const ThemeTestPage: React.FC = () => {
           <Grid item xs={12} md={6}>
             <Card sx={cardStyle}>
               <CardContent>
-                <Typography variant="h6" gutterBottom sx={{ letterSpacing: 2 }}>
+                <Typography
+                  variant="h6"
+                  gutterBottom
+                  sx={{ letterSpacing: 2, color: accentText, textShadow: '0 0 10px rgba(211,255,231,0.6)' }}
+                >
                   Metrics
                 </Typography>
                 <Divider sx={{ borderColor: 'rgba(54,255,143,0.35)', mb: 2 }} />
@@ -185,11 +199,11 @@ const ThemeTestPage: React.FC = () => {
                   {[['Gain', '8.5'], ['Sustain', '9.1'], ['Clarity', '7.8'], ['Noise Floor', '-92dB']].map(
                     ([label, value]) => (
                       <Grid key={label} item xs={6}>
-                        <Box sx={{ border: neonBorder, p: 1.5, textAlign: 'center' }}>
+                        <Box sx={{ border: neonBorder, p: 1.5, textAlign: 'center', color: '#e0fff1' }}>
                           <Typography variant="caption" sx={{ color: accentText, letterSpacing: 1 }}>
                             {label}
                           </Typography>
-                          <Typography variant="h5" sx={{ fontWeight: 800 }}>
+                          <Typography variant="h5" sx={{ fontWeight: 800, textShadow: '0 0 10px rgba(132,255,186,0.45)' }}>
                             {value}
                           </Typography>
                         </Box>
@@ -204,7 +218,11 @@ const ThemeTestPage: React.FC = () => {
           <Grid item xs={12} md={6}>
             <Card sx={cardStyle}>
               <CardContent>
-                <Typography variant="h6" gutterBottom sx={{ letterSpacing: 2 }}>
+                <Typography
+                  variant="h6"
+                  gutterBottom
+                  sx={{ letterSpacing: 2, color: accentText, textShadow: '0 0 10px rgba(211,255,231,0.6)' }}
+                >
                   Hardware Flags
                 </Typography>
                 <Divider sx={{ borderColor: 'rgba(54,255,143,0.35)', mb: 2 }} />
