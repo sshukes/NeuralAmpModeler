@@ -37,6 +37,7 @@ export class NamApiClient {
         ...init,
         signal: controller.signal,
       });
+      const resClone = res.clone();
 
       if (!res.ok) {
         const text = await res.text().catch(() => '');
@@ -44,15 +45,38 @@ export class NamApiClient {
       }
 
       const contentType = res.headers.get('content-type');
-      if (!contentType?.includes('application/json')) {
-        const bodyText = await res.text().catch(() => '');
-        const snippet = bodyText.length > 300 ? `${bodyText.slice(0, 300)}…` : bodyText;
-        throw new Error(
-          `Expected JSON response from ${url} (status ${res.status}) but received ${contentType ?? 'unknown content type'}: ${snippet}`
-        );
+      const isJsonContentType = contentType?.includes('application/json');
+
+      if (isJsonContentType) {
+        try {
+          return (await res.json()) as T;
+        } catch (parseErr) {
+          const bodyText = await resClone.text().catch(() => '');
+          const snippet = bodyText.length > 300 ? `${bodyText.slice(0, 300)}…` : bodyText;
+          throw new Error(
+            `Failed to parse JSON from ${url} (status ${res.status}): ${snippet}`
+          );
+        }
       }
 
-      return (await res.json()) as T;
+      const bodyText = await res.text().catch(() => '');
+      const trimmed = bodyText.trim();
+
+      if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+        try {
+          return JSON.parse(bodyText) as T;
+        } catch (parseErr) {
+          const snippet = bodyText.length > 300 ? `${bodyText.slice(0, 300)}…` : bodyText;
+          throw new Error(
+            `Failed to parse JSON from ${url} (status ${res.status}): ${snippet}`
+          );
+        }
+      }
+
+      const snippet = bodyText.length > 300 ? `${bodyText.slice(0, 300)}…` : bodyText;
+      throw new Error(
+        `Expected JSON response from ${url} (status ${res.status}) but received ${contentType ?? 'unknown content type'}: ${snippet}`
+      );
     } catch (err: any) {
       console.error('requestJson error for', url, err);
       throw err;
