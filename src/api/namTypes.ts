@@ -130,6 +130,7 @@ export interface TrainingRunDetailResponse {
     updatedAt?: string;
     completedAt?: string;
     progress?: TrainingRunProgress;
+    device?: TrainingDevice;
     training: TrainingConfig;
     metadata?: TrainingMetadata;
     metrics?: RunMetricsPoint[];
