@@ -8,13 +8,15 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "dev": "vite"
+    "dev": "vite",
+    "dev:full": "concurrently -k \"npm run dev:backend\" \"npm run dev\""
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@types/react-router-dom": "^5.3.3",
+    "concurrently": "^9.2.1",
     "vite": "^7.2.7",
     "vitest": "^4.0.15"
   },
