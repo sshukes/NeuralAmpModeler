@@ -2,6 +2,7 @@
 import type {
   TrainingRunCreateRequest,
   TrainingRunSummary,
+  TrainingRunDetailResponse,
   TrainingRunMetrics,
   FileUploadResponse,
   FileInspectResponse,
@@ -122,6 +123,14 @@ export class NamApiClient {
 
   async getTrainingRun(runId: string): Promise<TrainingRunSummary> {
     return this.requestJson<TrainingRunSummary>(`/training-runs/${encodeURIComponent(runId)}`);
+  }
+
+  async getTrainingRunDetail(
+    runId: string
+  ): Promise<TrainingRunDetailResponse> {
+    return this.requestJson<TrainingRunDetailResponse>(
+      `/training-runs/${encodeURIComponent(runId)}`
+    );
   }
 
   async getTrainingRunMetrics(runId: string): Promise<TrainingRunMetrics> {
