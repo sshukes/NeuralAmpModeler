@@ -1,4 +1,5 @@
 import { SxProps, Theme } from '@mui/material/styles';
+import { SystemStyleObject } from '@mui/system';
 
 export const consoleColors = {
   background: '#020902',
@@ -107,7 +108,7 @@ export const consoleTextFieldSx: SxProps<Theme> = {
   },
 };
 
-export const consoleTableCellSx: SxProps<Theme> = {
+export const consoleTableCellSx: SystemStyleObject<Theme> = {
   borderBottom: '1px solid rgba(54,255,143,0.24)',
   color: consoleColors.accent,
 };

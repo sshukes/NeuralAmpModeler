@@ -2,6 +2,7 @@
 import type {
   TrainingRunCreateRequest,
   TrainingRunSummary,
+  TrainingRunDetailResponse,
   TrainingRunMetrics,
   FileUploadResponse,
   FileInspectResponse,
@@ -37,13 +38,46 @@ export class NamApiClient {
         ...init,
         signal: controller.signal,
       });
+      const resClone = res.clone();
 
       if (!res.ok) {
         const text = await res.text().catch(() => '');
         throw new Error(`Request failed: ${res.status} ${res.statusText} - ${text}`);
       }
 
-      return (await res.json()) as T;
+      const contentType = res.headers.get('content-type');
+      const isJsonContentType = contentType?.includes('application/json');
+
+      if (isJsonContentType) {
+        try {
+          return (await res.json()) as T;
+        } catch (parseErr) {
+          const bodyText = await resClone.text().catch(() => '');
+          const snippet = bodyText.length > 300 ? `${bodyText.slice(0, 300)}…` : bodyText;
+          throw new Error(
+            `Failed to parse JSON from ${url} (status ${res.status}): ${snippet}`
+          );
+        }
+      }
+
+      const bodyText = await res.text().catch(() => '');
+      const trimmed = bodyText.trim();
+
+      if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+        try {
+          return JSON.parse(bodyText) as T;
+        } catch (parseErr) {
+          const snippet = bodyText.length > 300 ? `${bodyText.slice(0, 300)}…` : bodyText;
+          throw new Error(
+            `Failed to parse JSON from ${url} (status ${res.status}): ${snippet}`
+          );
+        }
+      }
+
+      const snippet = bodyText.length > 300 ? `${bodyText.slice(0, 300)}…` : bodyText;
+      throw new Error(
+        `Expected JSON response from ${url} (status ${res.status}) but received ${contentType ?? 'unknown content type'}: ${snippet}`
+      );
     } catch (err: any) {
       console.error('requestJson error for', url, err);
       throw err;
@@ -89,6 +123,14 @@ export class NamApiClient {
 
   async getTrainingRun(runId: string): Promise<TrainingRunSummary> {
     return this.requestJson<TrainingRunSummary>(`/training-runs/${encodeURIComponent(runId)}`);
+  }
+
+  async getTrainingRunDetail(
+    runId: string
+  ): Promise<TrainingRunDetailResponse> {
+    return this.requestJson<TrainingRunDetailResponse>(
+      `/training-runs/${encodeURIComponent(runId)}`
+    );
   }
 
   async getTrainingRunMetrics(runId: string): Promise<TrainingRunMetrics> {

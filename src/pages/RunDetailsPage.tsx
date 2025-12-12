@@ -26,6 +26,14 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { API_BASE_URL } from '../api/baseUrl';
+import { NamApiClient } from '../api/namApi';
+import {
+  TrainingRunDetailResponse,
+  RunMetricsPoint,
+  LogEntry,
+  TrainingRunStatus,
+  TrainingMetadata,
+} from '../api/namTypes';
 import {
   consoleButtonSx,
   consoleCardSx,
@@ -38,47 +46,13 @@ import {
   consoleTextFieldSx,
 } from '../theme/consoleTheme';
 
-type RunStatus = 'QUEUED' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
-
-type LogLevel = 'DEBUG' | 'INFO' | 'WARN' | 'ERROR';
-
-interface RunDetails {
-  id: string;
-  name: string;
-  status: RunStatus;
-  startedAt: string;
-  endedAt?: string;
-  totalEpochs?: number;
-  currentEpoch?: number;
-  errorRatio?: number;
-  bestValLoss?: number;
-  device?: string;
-}
-
-interface RunMetricsPoint {
-  epoch: number;
-  train_loss?: number;
-  val_loss?: number;
-  error_ratio?: number;
-  timestamp?: string;
-}
-
-interface LogEntry {
-  timestamp: string;
-  level: LogLevel;
-  message: string;
-}
-
-interface ApiRunResponse extends RunDetails {
-  metrics?: RunMetricsPoint[];
-  logs?: LogEntry[];
-}
-
 // point this at your FastAPI server
 const API_BASE = API_BASE_URL;
 
+type LogLevel = LogEntry['level'];
+
 const statusColor = (
-  status: RunStatus
+  status: TrainingRunStatus
 ): 'success' | 'info' | 'warning' | 'error' | 'default' => {
   switch (status) {
     case 'COMPLETED':
@@ -106,7 +80,9 @@ const RunDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const [run, setRun] = useState<RunDetails | null>(null);
+  const client = useMemo(() => new NamApiClient(API_BASE), []);
+
+  const [run, setRun] = useState<TrainingRunDetailResponse | null>(null);
   const [metrics, setMetrics] = useState<RunMetricsPoint[]>([]);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -124,13 +100,7 @@ const RunDetailsPage: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        // IMPORTANT: path matches your backend: /api/training-runs/:id
-        const res = await fetch(`${API_BASE}/training-runs/${id}`);
-        if (!res.ok) {
-          throw new Error(`Failed to load run: ${res.status}`);
-        }
-
-        const data: ApiRunResponse = await res.json();
+        const data = await client.getTrainingRunDetail(id);
 
         const {
           metrics: initialMetrics = [],
@@ -149,7 +119,7 @@ const RunDetailsPage: React.FC = () => {
     };
 
     fetchRun();
-  }, [id]);
+  }, [client, id]);
 
   const handleStop = async () => {
     if (!id) return;
@@ -216,7 +186,59 @@ const RunDetailsPage: React.FC = () => {
 
   const latestEpoch = metrics.length
     ? metrics[metrics.length - 1].epoch
-    : run.currentEpoch ?? 0;
+    : run.progress?.currentEpoch ?? 0;
+
+  const totalEpochs = run.progress?.maxEpochs ?? run.training?.epochs;
+  const bestValLoss =
+    run.progress?.bestValLoss ?? metrics[metrics.length - 1]?.val_loss;
+  const errorRatio = metrics[metrics.length - 1]?.error_ratio;
+
+  const detailRows = [
+    { label: 'Run ID', value: run.runId },
+    { label: 'Created', value: formatDateTime(run.createdAt) },
+    { label: 'NAM file', value: run.namFilename ?? '–' },
+    {
+      label: 'Epochs',
+      value:
+        totalEpochs !== undefined
+          ? `${latestEpoch}/${totalEpochs}`
+          : latestEpoch ?? '-',
+    },
+    { label: 'Architecture', value: run.training?.architecture ?? '–' },
+    { label: 'Device', value: run.training?.device ?? run.device ?? '–' },
+    { label: 'Batch size', value: run.training?.batchSize ?? '–' },
+    { label: 'Learning rate', value: run.training?.learningRate ?? '–' },
+  ];
+
+  const metadata: TrainingMetadata = run.metadata ?? {};
+  const metadataRows = [
+    { label: 'Modeled by', value: metadata.modeledBy ?? '–' },
+    { label: 'Gear make', value: metadata.gearMake ?? '–' },
+    { label: 'Gear model', value: metadata.gearModel ?? '–' },
+    { label: 'Gear type', value: metadata.gearType ?? '–' },
+    { label: 'Tone type', value: metadata.toneType ?? '–' },
+    {
+      label: 'Reamp send (dB)',
+      value:
+        metadata.reampSendLevelDb !== undefined
+          ? metadata.reampSendLevelDb
+          : '–',
+    },
+    {
+      label: 'Reamp return (dB)',
+      value:
+        metadata.reampReturnLevelDb !== undefined
+          ? metadata.reampReturnLevelDb
+          : '–',
+    },
+    {
+      label: 'Tags',
+      value:
+        metadata.tags && metadata.tags.length
+          ? metadata.tags.join(', ')
+          : '–',
+    },
+  ];
 
   return (
     <Box sx={consolePageSx}>
@@ -230,7 +252,7 @@ const RunDetailsPage: React.FC = () => {
         >
           <Box>
             <Typography variant="h5" gutterBottom sx={{ ...consoleHeadingSx, letterSpacing: 2 }}>
-              {run.name || `Run ${run.id}`}
+              {run.name || `Run ${run.runId}`}
             </Typography>
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} alignItems={{ xs: 'flex-start', md: 'center' }}>
               <Chip
@@ -239,16 +261,16 @@ const RunDetailsPage: React.FC = () => {
                 size="small"
               />
               <Typography variant="body2" sx={{ color: consoleColors.accent }}>
-                Started: {formatDateTime(run.startedAt)}
+                Started: {formatDateTime(run.startedAt || run.createdAt)}
               </Typography>
-              {run.endedAt && (
+              {run.completedAt && (
                 <Typography variant="body2" sx={{ color: consoleColors.accent }}>
-                  • Ended: {formatDateTime(run.endedAt)}
+                  • Completed: {formatDateTime(run.completedAt)}
                 </Typography>
               )}
-              {run.device && (
+              {(run.training?.device || run.device) && (
                 <Typography variant="body2" sx={{ color: consoleColors.accent }}>
-                  • Device: {run.device}
+                  • Device: {run.training?.device || run.device}
                 </Typography>
               )}
             </Stack>
@@ -280,35 +302,65 @@ const RunDetailsPage: React.FC = () => {
             gap: 2,
           }}
         >
-          {/* Stats card */}
+          {/* Stats + metadata card */}
           <Card sx={consoleCardSx}>
             <CardContent>
               <Typography variant="subtitle1" gutterBottom sx={consoleHeadingSx}>
-                Run Stats
+                Run Details
               </Typography>
               <Stack spacing={1}>
                 <Typography variant="body2" sx={{ color: consoleColors.accent }}>
                   Current epoch:{' '}
                   <strong>
-                    {latestEpoch}/{run.totalEpochs ?? '-'}
+                    {totalEpochs !== undefined
+                      ? `${latestEpoch}/${totalEpochs}`
+                      : latestEpoch ?? '-'}
                   </strong>
                 </Typography>
                 <Typography variant="body2" sx={{ color: consoleColors.accent }}>
                   Best val loss:{' '}
                   <strong>
-                    {run.bestValLoss !== undefined
-                      ? run.bestValLoss.toFixed(5)
-                      : '-'}
+                    {bestValLoss !== undefined ? bestValLoss.toFixed(5) : '-'}
                   </strong>
                 </Typography>
                 <Typography variant="body2" sx={{ color: consoleColors.accent }}>
                   Error ratio:{' '}
-                  <strong>
-                    {run.errorRatio !== undefined
-                      ? run.errorRatio.toFixed(4)
-                      : '-'}
-                  </strong>
+                  <strong>{errorRatio !== undefined ? errorRatio.toFixed(4) : '-'}</strong>
                 </Typography>
+              </Stack>
+
+              <Divider sx={{ ...consoleDividerSx, my: 1.5 }} />
+
+              <Typography variant="subtitle2" sx={consoleHeadingSx} gutterBottom>
+                Training
+              </Typography>
+              <Stack spacing={0.5}>
+                {detailRows.map((row) => (
+                  <Typography
+                    key={row.label}
+                    variant="body2"
+                    sx={{ color: consoleColors.accent }}
+                  >
+                    <strong>{row.label}:</strong> {row.value ?? '–'}
+                  </Typography>
+                ))}
+              </Stack>
+
+              <Divider sx={{ ...consoleDividerSx, my: 1.5 }} />
+
+              <Typography variant="subtitle2" sx={consoleHeadingSx} gutterBottom>
+                NAM metadata
+              </Typography>
+              <Stack spacing={0.5}>
+                {metadataRows.map((row) => (
+                  <Typography
+                    key={row.label}
+                    variant="body2"
+                    sx={{ color: consoleColors.accent }}
+                  >
+                    <strong>{row.label}:</strong> {row.value}
+                  </Typography>
+                ))}
               </Stack>
             </CardContent>
           </Card>
