@@ -14,6 +14,13 @@ import {
 } from '@mui/material';
 import type { TrainingMetadata, TrainingRunSummary } from '../api/namTypes';
 import { NamApiClient } from '../api/namApi';
+import {
+  consoleButtonSx,
+  consoleCardSx,
+  consoleColors,
+  consoleHeadingSx,
+  consoleTextFieldSx,
+} from '../theme/consoleTheme';
 
 type NamMetadataDialogProps = {
   open: boolean;
@@ -127,17 +134,48 @@ const NamMetadataDialog: React.FC<NamMetadataDialogProps> = ({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>Edit NAM metadata</DialogTitle>
-      <DialogContent dividers>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="md"
+      fullWidth
+      PaperProps={{
+        sx: {
+          ...consoleCardSx,
+          color: consoleColors.accent,
+          borderRadius: 2,
+          border: consoleColors.border,
+          background: 'linear-gradient(155deg, rgba(4,16,4,0.95), rgba(6,28,6,0.9))',
+        },
+      }}
+    >
+      <DialogTitle sx={{ ...consoleHeadingSx, borderBottom: '1px solid rgba(54,255,143,0.3)' }}>
+        Edit NAM metadata
+      </DialogTitle>
+      <DialogContent
+        dividers
+        sx={{
+          background: 'radial-gradient(circle at 20% 20%, rgba(54,255,143,0.08), transparent 45%)',
+        }}
+      >
         {error && (
           <Box mb={2}>
-            <Alert severity="error">{error}</Alert>
+            <Alert
+              severity="error"
+              sx={{
+                backgroundColor: 'rgba(42,0,0,0.35)',
+                border: '1px solid rgba(255,99,99,0.4)',
+                color: '#ffb3b3',
+                '& .MuiAlert-icon': { color: '#ff7b7b' },
+              }}
+            >
+              {error}
+            </Alert>
           </Box>
         )}
 
         <Stack spacing={2}>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{ color: consoleColors.accent }}>
             {loading
               ? 'Loading metadata...'
               : namFilename
@@ -155,6 +193,7 @@ const NamMetadataDialog: React.FC<NamMetadataDialogProps> = ({
                 onChange={(e) => setNamFilename(e.target.value)}
                 helperText="Set the filename used when downloading the NAM model"
                 disabled={loading}
+                sx={consoleTextFieldSx}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -165,6 +204,7 @@ const NamMetadataDialog: React.FC<NamMetadataDialogProps> = ({
                 value={metadata.modeledBy ?? ''}
                 onChange={handleFieldChange('modeledBy')}
                 disabled={loading}
+                sx={consoleTextFieldSx}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -175,6 +215,7 @@ const NamMetadataDialog: React.FC<NamMetadataDialogProps> = ({
                 value={metadata.gearMake ?? ''}
                 onChange={handleFieldChange('gearMake')}
                 disabled={loading}
+                sx={consoleTextFieldSx}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -185,6 +226,7 @@ const NamMetadataDialog: React.FC<NamMetadataDialogProps> = ({
                 value={metadata.gearModel ?? ''}
                 onChange={handleFieldChange('gearModel')}
                 disabled={loading}
+                sx={consoleTextFieldSx}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -195,6 +237,7 @@ const NamMetadataDialog: React.FC<NamMetadataDialogProps> = ({
                 value={metadata.gearType ?? ''}
                 onChange={handleFieldChange('gearType')}
                 disabled={loading}
+                sx={consoleTextFieldSx}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -205,6 +248,7 @@ const NamMetadataDialog: React.FC<NamMetadataDialogProps> = ({
                 value={metadata.toneType ?? ''}
                 onChange={handleFieldChange('toneType')}
                 disabled={loading}
+                sx={consoleTextFieldSx}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -216,6 +260,7 @@ const NamMetadataDialog: React.FC<NamMetadataDialogProps> = ({
                 value={metadata.reampSendLevelDb ?? ''}
                 onChange={handleNumberChange('reampSendLevelDb')}
                 disabled={loading}
+                sx={consoleTextFieldSx}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -227,6 +272,7 @@ const NamMetadataDialog: React.FC<NamMetadataDialogProps> = ({
                 value={metadata.reampReturnLevelDb ?? ''}
                 onChange={handleNumberChange('reampReturnLevelDb')}
                 disabled={loading}
+                sx={consoleTextFieldSx}
               />
             </Grid>
             <Grid item xs={12}>
@@ -238,14 +284,33 @@ const NamMetadataDialog: React.FC<NamMetadataDialogProps> = ({
                 value={tagsInput}
                 onChange={(e) => setTagsInput(e.target.value)}
                 disabled={loading}
+                sx={consoleTextFieldSx}
               />
             </Grid>
           </Grid>
         </Stack>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} disabled={saving}>Cancel</Button>
-        <Button variant="contained" onClick={handleSave} disabled={saving || loading || !run}>
+      <DialogActions sx={{ borderTop: '1px solid rgba(54,255,143,0.3)', px: 3, py: 2 }}>
+        <Button
+          onClick={onClose}
+          disabled={saving}
+          sx={{
+            ...consoleButtonSx,
+            backgroundColor: 'rgba(18, 32, 18, 0.9)',
+          }}
+        >
+          Cancel
+        </Button>
+        <Button
+          variant="contained"
+          onClick={handleSave}
+          disabled={saving || loading || !run}
+          sx={{
+            ...consoleButtonSx,
+            backgroundColor: 'rgba(6, 52, 6, 0.95)',
+            ml: 1,
+          }}
+        >
           {saving ? 'Saving…' : 'Save to NAM'}
         </Button>
       </DialogActions>
