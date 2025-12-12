@@ -212,7 +212,7 @@ const NamMetadataDialog: React.FC<NamMetadataDialogProps> = ({
           </Box>
 
           <Grid container spacing={2}>
-            <Grid item xs={12}>
+            <Grid xs={12}>
               <TextField
                 label="NAM filename"
                 fullWidth
@@ -224,7 +224,7 @@ const NamMetadataDialog: React.FC<NamMetadataDialogProps> = ({
                 sx={consoleTextFieldSx}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <TextField
                 label="Modeled By"
                 fullWidth
@@ -235,7 +235,7 @@ const NamMetadataDialog: React.FC<NamMetadataDialogProps> = ({
                 sx={consoleTextFieldSx}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <TextField
                 label="Gear Make"
                 fullWidth
@@ -246,7 +246,7 @@ const NamMetadataDialog: React.FC<NamMetadataDialogProps> = ({
                 sx={consoleTextFieldSx}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <TextField
                 label="Gear Model"
                 fullWidth
@@ -257,7 +257,7 @@ const NamMetadataDialog: React.FC<NamMetadataDialogProps> = ({
                 sx={consoleTextFieldSx}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <TextField
                 label="Gear Type"
                 fullWidth
@@ -268,7 +268,7 @@ const NamMetadataDialog: React.FC<NamMetadataDialogProps> = ({
                 sx={consoleTextFieldSx}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <TextField
                 label="Tone Type"
                 fullWidth
@@ -279,7 +279,7 @@ const NamMetadataDialog: React.FC<NamMetadataDialogProps> = ({
                 sx={consoleTextFieldSx}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <TextField
                 label="Reamp Send Level (dB)"
                 fullWidth
@@ -292,7 +292,7 @@ const NamMetadataDialog: React.FC<NamMetadataDialogProps> = ({
                 sx={consoleTextFieldSx}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <TextField
                 label="Reamp Return Level (dB)"
                 fullWidth
@@ -305,7 +305,7 @@ const NamMetadataDialog: React.FC<NamMetadataDialogProps> = ({
                 sx={consoleTextFieldSx}
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid xs={12}>
               <TextField
                 label="Tags"
                 helperText="Comma-separated list"
