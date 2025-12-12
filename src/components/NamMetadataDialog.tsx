@@ -3,6 +3,8 @@ import {
   Alert,
   Box,
   Button,
+  Chip,
+  Divider,
   Dialog,
   DialogActions,
   DialogContent,
@@ -175,13 +177,39 @@ const NamMetadataDialog: React.FC<NamMetadataDialogProps> = ({
         )}
 
         <Stack spacing={2}>
-          <Typography variant="body2" sx={{ color: consoleColors.accent }}>
-            {loading
-              ? 'Loading metadata...'
-              : namFilename
-                ? `Editing metadata in ${namFilename}`
-                : 'NAM metadata'}
-          </Typography>
+          <Box sx={{ ...consoleCardSx, p: 2 }}>
+            <Typography variant="body1" sx={{ color: consoleColors.accent, fontWeight: 700 }}>
+              {run?.name || run?.runId || 'NAM metadata'}
+            </Typography>
+            <Typography variant="body2" sx={{ color: consoleColors.neon, mt: 0.5 }}>
+              {loading
+                ? 'Loading metadata...'
+                : namFilename
+                  ? `Editing metadata saved in ${namFilename}`
+                  : 'Fill out the details to brand your NAM file'}
+            </Typography>
+            {run?.namFilename && (
+              <Typography variant="body2" sx={{ mt: 0.5, color: consoleColors.accent }}>
+                Current download name: <strong>{run.namFilename}</strong>
+              </Typography>
+            )}
+            <Divider sx={{ my: 1.5, borderColor: 'rgba(54,255,143,0.25)' }} />
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              {tagsInput
+                .split(',')
+                .map((t) => t.trim())
+                .filter(Boolean)
+                .slice(0, 6)
+                .map((tag) => (
+                  <Chip key={tag} label={tag} size="small" sx={{ border: consoleColors.border }} />
+                ))}
+              {tagsInput.trim() === '' && (
+                <Typography variant="body2" sx={{ color: consoleColors.accent }}>
+                  Tags will appear here as you add them.
+                </Typography>
+              )}
+            </Stack>
+          </Box>
 
           <Grid container spacing={2}>
             <Grid item xs={12}>
@@ -260,6 +288,7 @@ const NamMetadataDialog: React.FC<NamMetadataDialogProps> = ({
                 value={metadata.reampSendLevelDb ?? ''}
                 onChange={handleNumberChange('reampSendLevelDb')}
                 disabled={loading}
+                helperText="Optional; leave blank if unknown"
                 sx={consoleTextFieldSx}
               />
             </Grid>
@@ -272,6 +301,7 @@ const NamMetadataDialog: React.FC<NamMetadataDialogProps> = ({
                 value={metadata.reampReturnLevelDb ?? ''}
                 onChange={handleNumberChange('reampReturnLevelDb')}
                 disabled={loading}
+                helperText="Optional; leave blank if unknown"
                 sx={consoleTextFieldSx}
               />
             </Grid>
