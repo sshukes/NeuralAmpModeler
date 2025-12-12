@@ -205,7 +205,7 @@ const RunDetailsPage: React.FC = () => {
           : latestEpoch ?? '-',
     },
     { label: 'Architecture', value: run.training?.architecture ?? '–' },
-    { label: 'Device', value: run.training?.device ?? run.device ?? '–' },
+    { label: 'Device', value: run.training?.device ?? '–' },
     { label: 'Batch size', value: run.training?.batchSize ?? '–' },
     { label: 'Learning rate', value: run.training?.learningRate ?? '–' },
   ];
@@ -268,9 +268,9 @@ const RunDetailsPage: React.FC = () => {
                   • Completed: {formatDateTime(run.completedAt)}
                 </Typography>
               )}
-              {(run.training?.device || run.device) && (
+              {run.training?.device && (
                 <Typography variant="body2" sx={{ color: consoleColors.accent }}>
-                  • Device: {run.training?.device || run.device}
+                  • Device: {run.training?.device}
                 </Typography>
               )}
             </Stack>
