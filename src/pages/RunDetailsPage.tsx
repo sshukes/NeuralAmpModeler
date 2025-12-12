@@ -25,6 +25,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
+import { API_BASE_URL } from '../api/baseUrl';
 import {
   consoleButtonSx,
   consoleCardSx,
@@ -74,7 +75,7 @@ interface ApiRunResponse extends RunDetails {
 }
 
 // point this at your FastAPI server
-const API_BASE = 'http://localhost:8000';
+const API_BASE = API_BASE_URL;
 
 const statusColor = (
   status: RunStatus
@@ -124,7 +125,7 @@ const RunDetailsPage: React.FC = () => {
         setError(null);
 
         // IMPORTANT: path matches your backend: /api/training-runs/:id
-        const res = await fetch(`${API_BASE}/api/training-runs/${id}`);
+        const res = await fetch(`${API_BASE}/training-runs/${id}`);
         if (!res.ok) {
           throw new Error(`Failed to load run: ${res.status}`);
         }
@@ -154,7 +155,7 @@ const RunDetailsPage: React.FC = () => {
     if (!id) return;
     try {
       // adjust if your stop endpoint is different, or comment this out
-      await fetch(`${API_BASE}/api/training-runs/${id}/stop`, {
+      await fetch(`${API_BASE}/training-runs/${id}/stop`, {
         method: 'POST',
       });
     } catch (e) {

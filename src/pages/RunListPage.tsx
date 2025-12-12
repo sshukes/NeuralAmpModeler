@@ -17,6 +17,7 @@ import {
   Typography,
 } from '@mui/material';
 import { NamApiClient } from '../api/namApi';
+import { API_BASE_URL } from '../api/baseUrl';
 import type { TrainingMetadata, TrainingRunSummary, TrainingRunStatus } from '../api/namTypes';
 import NamMetadataDialog from '../components/NamMetadataDialog';
 import {
@@ -29,7 +30,7 @@ import {
   consoleTableCellSx,
 } from '../theme/consoleTheme';
 
-const API_BASE = 'http://localhost:8000/api';
+const API_BASE = API_BASE_URL;
 
 const statusColor = (
   status: TrainingRunStatus
