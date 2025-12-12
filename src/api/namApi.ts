@@ -43,6 +43,15 @@ export class NamApiClient {
         throw new Error(`Request failed: ${res.status} ${res.statusText} - ${text}`);
       }
 
+      const contentType = res.headers.get('content-type');
+      if (!contentType?.includes('application/json')) {
+        const bodyText = await res.text().catch(() => '');
+        const snippet = bodyText.length > 300 ? `${bodyText.slice(0, 300)}…` : bodyText;
+        throw new Error(
+          `Expected JSON response from ${url} (status ${res.status}) but received ${contentType ?? 'unknown content type'}: ${snippet}`
+        );
+      }
+
       return (await res.json()) as T;
     } catch (err: any) {
       console.error('requestJson error for', url, err);
