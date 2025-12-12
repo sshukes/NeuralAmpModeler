@@ -1,6 +1,7 @@
 // src/components/NamTrainerApp.tsx
 import React, { useEffect, useMemo, useState, ChangeEvent, FormEvent } from 'react';
 import { NamApiClient } from '../api/namApi';
+import { API_BASE_URL } from '../api/baseUrl';
 import type {
     TrainingArchitecture,
     TrainingDevice,
@@ -63,7 +64,7 @@ type TrainingMetrics = {
     qualityScore: number;
 };
 
-const API_BASE = 'http://localhost:8000/api';
+const API_BASE = API_BASE_URL;
 
 const defaultTrainingConfig: TrainingConfig = {
     architecture: 'standard' as TrainingArchitecture,
